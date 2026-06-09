@@ -1,0 +1,4 @@
+procedure,city,low_estimate_inr,high_estimate_inr,cost_notes
+Cataract surgery,Bangalore,45000,150000,"Lens choice, diagnostics, surgeon fee, and facility type affect pricing"
+Knee replacement,Bangalore,220000,650000,"Implant choice, room category, hospital stay, and physiotherapy affect pricing"
+Cardiac bypass surgery,Bangalore,350000,900000,"ICU stay, graft complexity, tests, and recovery course affect pricing"
