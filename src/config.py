@@ -20,6 +20,20 @@ def normalize_pinecone_index_name(name: str) -> str:
     return normalized or "synataric"
 
 
+def _secret(name: str, default: str = "") -> str:
+    value = os.getenv(name)
+    if value:
+        return value
+    try:
+        import streamlit as st
+
+        if name in st.secrets:
+            return str(st.secrets[name])
+    except Exception:
+        pass
+    return default
+
+
 @dataclass(frozen=True)
 class Settings:
     openai_api_key: str
@@ -40,16 +54,16 @@ class Settings:
 def load_settings(require_secrets: bool = True) -> Settings:
     load_dotenv(PROJECT_ROOT / ".env")
     settings = Settings(
-        openai_api_key=os.getenv("OPENAI_API_KEY", ""),
-        pinecone_api_key=os.getenv("PINECONE_API_KEY", ""),
+        openai_api_key=_secret("OPENAI_API_KEY"),
+        pinecone_api_key=_secret("PINECONE_API_KEY"),
         pinecone_index_name=normalize_pinecone_index_name(
-            os.getenv("PINECONE_INDEX_NAME", "Synataric – Healthcare Travel & Care Planning RAG")
+            _secret("PINECONE_INDEX_NAME", "Synataric Healthcare Travel Care Planning RAG")
         ),
-        pinecone_cloud=os.getenv("PINECONE_CLOUD", "aws"),
-        pinecone_region=os.getenv("PINECONE_REGION", "us-east-1"),
-        langchain_api_key=os.getenv("LANGCHAIN_API_KEY", ""),
-        langchain_tracing_v2=os.getenv("LANGCHAIN_TRACING_V2", "false"),
-        langchain_project=os.getenv("LANGCHAIN_PROJECT", "Synataric-Navigator"),
+        pinecone_cloud=_secret("PINECONE_CLOUD", "aws"),
+        pinecone_region=_secret("PINECONE_REGION", "us-east-1"),
+        langchain_api_key=_secret("LANGCHAIN_API_KEY"),
+        langchain_tracing_v2=_secret("LANGCHAIN_TRACING_V2", "false"),
+        langchain_project=_secret("LANGCHAIN_PROJECT", "Synataric-Navigator"),
     )
     missing = []
     if require_secrets and not settings.openai_api_key:
@@ -65,9 +79,9 @@ def load_settings(require_secrets: bool = True) -> Settings:
 def configure_langsmith() -> bool:
     """Enable LangSmith tracing when credentials are present."""
     load_dotenv(PROJECT_ROOT / ".env")
-    api_key = os.getenv("LANGCHAIN_API_KEY", "")
-    tracing = os.getenv("LANGCHAIN_TRACING_V2", "false").lower() == "true"
-    project = os.getenv("LANGCHAIN_PROJECT", "Synataric-Navigator")
+    api_key = _secret("LANGCHAIN_API_KEY")
+    tracing = _secret("LANGCHAIN_TRACING_V2", "false").lower() == "true"
+    project = _secret("LANGCHAIN_PROJECT", "Synataric-Navigator")
     if api_key and tracing:
         os.environ["LANGCHAIN_API_KEY"] = api_key
         os.environ["LANGCHAIN_TRACING_V2"] = "true"

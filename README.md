@@ -35,7 +35,7 @@ Fill in `.env`:
 ```bash
 OPENAI_API_KEY=your-openai-key
 PINECONE_API_KEY=your-pinecone-key
-PINECONE_INDEX_NAME=Synataric – Healthcare Travel & Care Planning RAG
+PINECONE_INDEX_NAME=Synataric Healthcare Travel Care Planning RAG
 PINECONE_CLOUD=aws
 PINECONE_REGION=us-east-1
 ```
@@ -58,6 +58,10 @@ This creates sample data if needed, loads documents, cleans them, creates fixed 
 ```bash
 streamlit run app.py
 ```
+
+## Deploy
+
+For a public Streamlit Community Cloud demo, see `DEPLOYMENT.md`. Use `app.py` as the entry point and store API keys in Streamlit secrets, using `.streamlit/secrets.toml.example` as the template.
 
 ## Sample Questions
 

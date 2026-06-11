@@ -63,6 +63,24 @@ def test_rerank_fallback_adds_scores_and_final_rank():
     assert ranked[1].metadata["rerank_score"] == 0.82
 
 
+def test_provider_intent_promotes_hospital_docs_over_cost_docs():
+    docs = [
+        Document(
+            page_content="procedure: Cataract surgery city: Bangalore low_estimate_inr: 45000 high_estimate_inr: 150000",
+            metadata={"file_name": "india_procedure_costs.csv", "category": "costs", "retrieval_score": 0.91},
+        ),
+        Document(
+            page_content="hospital_name: Bangalore Eye Centre city: Bangalore focus_area: Cataract and retina referral",
+            metadata={"file_name": "bangalore_eye_hospitals.csv", "category": "hospitals", "retrieval_score": 0.82},
+        ),
+    ]
+
+    ranked = rerank_documents("Where can we find good cataract surgery in India?", docs, top_n=2, use_flashrank=False)
+
+    assert ranked[0].metadata["file_name"] == "bangalore_eye_hospitals.csv"
+    assert ranked[0].metadata["intent_boost"] > 0
+
+
 def test_source_metadata_includes_retrieved_fact_and_scores():
     docs = [
         Document(
