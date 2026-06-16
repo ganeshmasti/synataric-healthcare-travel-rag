@@ -14,6 +14,32 @@ from src.loaders import load_documents
 from src.rag_chain import build_sources_referenced
 from src.sample_data import create_sample_corpus
 
+try:
+    from src.agent_session import (
+        apply_human_clarification,
+        pending_from_dict,
+        pending_to_dict,
+        start_agent_session,
+    )
+
+    AGENT_BACKEND_AVAILABLE = True
+except Exception:
+    apply_human_clarification = None
+    pending_from_dict = None
+    pending_to_dict = None
+    start_agent_session = None
+    AGENT_BACKEND_AVAILABLE = False
+
+try:
+    from src.react_care_agent import run_react_care_agent
+
+    REACT_AGENT_AVAILABLE = True
+    REACT_AGENT_IMPORT_ERROR = ""
+except Exception as exc:
+    run_react_care_agent = None
+    REACT_AGENT_AVAILABLE = False
+    REACT_AGENT_IMPORT_ERROR = str(exc)
+
 
 st.set_page_config(page_title="Synataric Navigator", page_icon="S", layout="wide")
 
@@ -371,6 +397,18 @@ def _init_state() -> None:
         "evidence_locations": None,
         "evidence_query": "",
         "query_text": "",
+        "agent_latest_question": "",
+        "agent_latest_result": None,
+        "agent_pending_clarification": None,
+        "agent_execution_history": [],
+        "agent_query_text": "",
+        "agent_clarification_text": "",
+        "react_latest_question": "",
+        "react_latest_result": None,
+        "react_query_text": (
+            "Create a care travel plan for cataract surgery in Bangalore including providers, "
+            "cost, recovery, and risks."
+        ),
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -899,6 +937,576 @@ def render_find_evidence_page(strategy: str, top_k: int) -> None:
                 st.write(location.get("parent_context") or "No parent context available.")
 
 
+def _agent_namespace(strategy: str) -> str:
+    return _namespace(strategy)
+
+
+def _agent_result_from_session(session_result) -> dict:
+    if hasattr(session_result, "model_dump"):
+        return session_result.model_dump().get("result", {})
+    if hasattr(session_result, "dict"):
+        return session_result.dict().get("result", {})
+    return getattr(session_result, "result", {}) or {}
+
+
+def _store_agent_session_result(session_result, question: str) -> None:
+    result = _agent_result_from_session(session_result)
+    st.session_state.agent_latest_question = question
+    st.session_state.agent_latest_result = result
+    pending = getattr(session_result, "pending_clarification", None)
+    st.session_state.agent_pending_clarification = pending_to_dict(pending) if pending_to_dict and pending else None
+    st.session_state.agent_execution_history.append(
+        {
+            "question": question,
+            "status": result.get("status"),
+            "intent": result.get("intent"),
+            "selected_tool": result.get("selected_tool"),
+        }
+    )
+
+
+def _status_notice(status: str, message: str) -> None:
+    if status == "complete":
+        st.success(message)
+    elif status in {"unsafe", "error"}:
+        st.error(message)
+    elif status in {"needs_human", "out_of_scope", "no_evidence", "fallback"}:
+        st.warning(message)
+    else:
+        st.info(message)
+
+
+def render_agent_query_panel(namespace: str, top_k: int) -> None:
+    with st.container(border=True):
+        st.markdown("### Ask an Agentic Healthcare Travel Question")
+        sample_questions = [
+            "Where can I find good cataract surgery in India?",
+            "What is the cost of cataract surgery in Bangalore?",
+            "Plan my travel for surgery in Bangalore",
+            "Should I take antibiotics after surgery?",
+            "Who won the Super Bowl in 2024?",
+            "Help me with this",
+        ]
+        sample_columns = st.columns(3)
+        for index, sample in enumerate(sample_questions):
+            if sample_columns[index % 3].button(sample, key=f"agent_sample_{index}", use_container_width=True):
+                st.session_state.agent_query_text = sample
+
+        question = st.text_area(
+            "Ask an agentic healthcare travel question...",
+            key="agent_query_text",
+            placeholder="Ask about providers, costs, recovery, risks, travel planning, evidence, or safety.",
+            height=120,
+        )
+        if st.button("Run Agent", type="primary", use_container_width=True):
+            if not AGENT_BACKEND_AVAILABLE:
+                st.error("Agent Navigator backend is not available.")
+                return
+            if not question.strip():
+                st.warning("Enter an agent question first.")
+                return
+            st.session_state.agent_pending_clarification = None
+            with st.spinner("Running Synataric Agent Navigator..."):
+                session_result = start_agent_session(question.strip(), namespace=namespace, top_k=top_k)
+            _store_agent_session_result(session_result, question.strip())
+
+
+def render_agent_clarification_panel() -> None:
+    pending_data = st.session_state.agent_pending_clarification
+    if not pending_data:
+        return
+    with st.container(border=True):
+        st.warning("Human clarification required")
+        pending = pending_from_dict(pending_data) if pending_from_dict else None
+        human_question = pending.human_question if pending else pending_data.get("human_question")
+        st.markdown(f"**{human_question}**")
+        human_response = st.text_input("Your clarification", key="agent_clarification_text")
+        if st.button("Continue Agent", type="primary", use_container_width=True):
+            if not human_response.strip():
+                st.warning("Enter your clarification first.")
+                return
+            if not pending or apply_human_clarification is None:
+                st.error("Agent Navigator backend is not available.")
+                return
+            with st.spinner("Continuing the agent with your clarification..."):
+                continued = apply_human_clarification(pending, human_response.strip())
+            _store_agent_session_result(continued, pending.original_question)
+            if not getattr(continued, "pending_clarification", None):
+                st.session_state.agent_pending_clarification = None
+
+
+def render_agent_status_metrics(result: dict | None) -> None:
+    if not result:
+        return
+    columns = st.columns(4)
+    columns[0].metric("Status", result.get("status", "N/A"))
+    columns[1].metric("Intent", _short(result.get("intent", "N/A"), 26))
+    columns[2].metric("Confidence", _format_score(result.get("intent_confidence")))
+    columns[3].metric("Selected Tool", _short(result.get("selected_tool", "N/A"), 28))
+    columns = st.columns(4)
+    columns[0].metric("Requires Human", "Yes" if result.get("requires_human") else "No")
+    columns[1].metric("Sources Used", len(result.get("sources", []) or []))
+    columns[2].metric("Evidence Chunks", len(result.get("evidence", []) or []))
+    columns[3].metric("Retrieved / Reranked", f"{result.get('retrieved_count', 0)} / {result.get('reranked_count', 0)}")
+
+
+def render_agent_execution_log(result: dict | None) -> None:
+    st.markdown("### Agent Execution Log")
+    log_lines = (result or {}).get("execution_log", [])
+    if log_lines:
+        st.code("\n".join(str(line) for line in log_lines), language="text")
+    else:
+        st.info("Run the agent to see classification, routing, tool execution, and final response steps.")
+
+
+def render_agent_intent_view(result: dict | None) -> None:
+    if not result:
+        return
+    with st.container(border=True):
+        st.markdown("### Intent Routing Decision")
+        rows = [
+            {"Field": "User question", "Value": result.get("question", "N/A")},
+            {"Field": "Intent", "Value": result.get("intent", "N/A")},
+            {"Field": "Confidence", "Value": _format_score(result.get("intent_confidence"))},
+            {"Field": "Reasoning", "Value": result.get("intent_reasoning", "N/A")},
+            {"Field": "Missing fields", "Value": ", ".join(result.get("missing_fields") or []) or "N/A"},
+            {"Field": "Suggested tools", "Value": ", ".join(result.get("suggested_tools") or []) or "N/A"},
+            {"Field": "Safety flags", "Value": ", ".join(result.get("safety_flags") or []) or "N/A"},
+        ]
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+
+def render_agent_tool_view(result: dict | None) -> None:
+    if not result:
+        return
+    with st.container(border=True):
+        st.markdown("### Tool Execution")
+        columns = st.columns(4)
+        columns[0].metric("Selected Tool", _short(result.get("selected_tool", "N/A"), 28))
+        columns[1].metric("Tool Status", result.get("status", "N/A"))
+        columns[2].metric("Recovery Action", _short(result.get("recovery_action") or "N/A", 28))
+        columns[3].metric("Fallback Used", "Yes" if result.get("fallback_used") else "No")
+
+        tool_calls = result.get("tool_calls") or []
+        if tool_calls:
+            st.markdown("**Tool Calls**")
+            st.dataframe(pd.DataFrame(tool_calls), use_container_width=True, hide_index=True)
+
+        warnings = result.get("warnings") or []
+        errors = result.get("errors") or []
+        if warnings:
+            st.warning("\n".join(str(item) for item in warnings))
+        if errors:
+            st.error("\n".join(str(item) for item in errors))
+
+        with st.expander("Raw tool result"):
+            st.json(result.get("tool_result") or {})
+        with st.expander("All tool results"):
+            st.json(result.get("tool_results") or [])
+
+
+def render_agent_answer(result: dict | None) -> None:
+    if not result:
+        st.info("Run the agent to produce a care navigation response.")
+        return
+    status = result.get("status")
+    answer = result.get("answer") or "I don't have enough context to answer this from the available Synataric corpus."
+    title = {
+        "complete": "Care Navigation Answer",
+        "needs_human": "Human Clarification Needed",
+        "unsafe": "Safety Response",
+        "out_of_scope": "Out-of-Scope Response",
+        "no_evidence": "Insufficient Context Response",
+        "fallback": "Fallback Response",
+        "error": "Agent Error",
+    }.get(status, "Agent Response")
+    with st.container(border=True):
+        st.markdown(f"### {title}")
+        _status_notice(status, answer)
+        st.caption("Educational healthcare navigation only. Not medical advice. Does not diagnose or prescribe.")
+
+
+def render_agent_sources(result: dict | None) -> None:
+    if not result:
+        return
+    sources = result.get("sources") or []
+    st.markdown("### Sources")
+    if not sources:
+        st.info("No sources returned for this agent response.")
+        return
+    for index, source in enumerate(sources, start=1):
+        with st.container(border=True):
+            st.markdown(f"**[{source.get('source_number', index)}] {_source_label(source)}**")
+            cols = st.columns(5)
+            cols[0].metric("Category", source.get("category", "N/A"))
+            cols[1].metric("Doc Type", source.get("doc_type", "N/A"))
+            cols[2].metric("Strategy", source.get("chunk_strategy", "N/A"))
+            cols[3].metric("Source #", source.get("source_number", index))
+            cols[4].metric("File", _short(_source_label(source), 28))
+            if source.get("retrieved_fact"):
+                st.caption(_short(source["retrieved_fact"], 500))
+            if source.get("source_path"):
+                with st.expander("View full source path"):
+                    st.code(str(source["source_path"]), language="text")
+            with st.expander("Raw source metadata"):
+                st.json(source)
+
+
+def render_agent_evidence(result: dict | None) -> None:
+    if not result:
+        return
+    evidence = result.get("evidence") or []
+    st.markdown("### Evidence")
+    if not evidence:
+        st.info("No evidence chunks returned for this agent response.")
+        return
+    for index, item in enumerate(evidence, start=1):
+        source = item.get("source") or "unknown"
+        with st.expander(f"Evidence #{index} - {source}", expanded=index == 1):
+            cols = st.columns(4)
+            cols[0].metric("Category", item.get("category", "N/A"))
+            cols[1].metric("Retrieval Score", _format_score(item.get("retrieval_score")))
+            cols[2].metric("Rerank Score", _format_score(item.get("rerank_score")))
+            cols[3].metric("Chunk Strategy", item.get("chunk_strategy", "N/A"))
+            st.write(item.get("snippet") or "No snippet available.")
+
+
+def render_agent_page(strategy: str, top_k: int) -> None:
+    render_header()
+    st.markdown("## Synataric Agent Navigator")
+    st.caption("Intent-aware healthcare travel assistant")
+    st.write(
+        "Routes user goals to provider, cost, recovery, risk, travel, evidence, safety, "
+        "or human-clarification tools."
+    )
+    st.info(
+        "This page demonstrates the Week 3 agentic upgrade. The system first classifies intent, "
+        "then routes to a domain tool, handles safety or missing information, and produces a grounded "
+        "response using the existing Synataric RAG backend."
+    )
+    st.caption("Question -> Intent Router -> Tool Selection -> Tool Execution -> Safety / Human Check -> Final Answer")
+
+    if not AGENT_BACKEND_AVAILABLE:
+        st.error("Agent Navigator backend is not available.")
+        return
+
+    namespace = _agent_namespace(strategy)
+    render_agent_query_panel(namespace, top_k)
+    render_agent_clarification_panel()
+
+    result = st.session_state.agent_latest_result
+    if not result:
+        st.info("Run an agent question to see intent routing, tool execution, evidence, and response assembly.")
+        return
+
+    render_agent_status_metrics(result)
+    render_agent_answer(result)
+    render_agent_execution_log(result)
+
+    route_tab, tool_tab, sources_tab, evidence_tab, history_tab = st.tabs(
+        ["Intent Routing", "Tool Execution", "Sources", "Evidence", "History"]
+    )
+    with route_tab:
+        render_agent_intent_view(result)
+    with tool_tab:
+        render_agent_tool_view(result)
+    with sources_tab:
+        render_agent_sources(result)
+    with evidence_tab:
+        render_agent_evidence(result)
+    with history_tab:
+        history = st.session_state.agent_execution_history
+        if history:
+            st.dataframe(pd.DataFrame(history), use_container_width=True, hide_index=True)
+        else:
+            st.info("No agent execution history yet.")
+
+
+def _react_source_name(value) -> str:
+    return str(value or "unknown").split("/")[-1].split("\\")[-1]
+
+
+def _react_observation_sources(observation: dict) -> list[str]:
+    names = []
+    for source in observation.get("sources") or []:
+        name = source.get("file_name") or source.get("source") or source.get("title")
+        if name:
+            names.append(_react_source_name(name))
+    for item in observation.get("evidence") or []:
+        if item.get("source"):
+            names.append(_react_source_name(item["source"]))
+    return list(dict.fromkeys(names))
+
+
+def _react_tool_calls_dataframe(tool_calls: list[dict]) -> pd.DataFrame:
+    rows = []
+    for index, call in enumerate(tool_calls, start=1):
+        rows.append(
+            {
+                "Step": index,
+                "Tool Name": call.get("tool_name", "N/A"),
+                "Input": _short(call.get("input", ""), 240),
+                "Status": call.get("status", "N/A"),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def _clean_react_observation(observation: dict) -> dict:
+    cleaned = dict(observation)
+    cleaned["sources"] = [
+        {
+            **source,
+            "source": _react_source_name(source.get("source")) if source.get("source") else source.get("source"),
+            "file_name": _react_source_name(source.get("file_name")) if source.get("file_name") else source.get("file_name"),
+            "path": _react_source_name(source.get("path")) if source.get("path") else source.get("path"),
+        }
+        for source in cleaned.get("sources", []) or []
+    ]
+    cleaned["evidence"] = [
+        {
+            **item,
+            "source": _react_source_name(item.get("source")) if item.get("source") else item.get("source"),
+        }
+        for item in cleaned.get("evidence", []) or []
+    ]
+    return cleaned
+
+
+def render_react_query_panel(namespace: str, top_k: int) -> None:
+    with st.container(border=True):
+        st.markdown("### Care Planning Goal")
+        sample_questions = [
+            "Create a care travel plan for cataract surgery in Bangalore including providers, cost, recovery, and risks.",
+            "What is the cost of cataract surgery in Bangalore?",
+            "Plan my travel for surgery in Bangalore.",
+            "Should I take antibiotics after surgery?",
+            "Who won the Super Bowl in 2024?",
+        ]
+        sample_columns = st.columns(2)
+        for index, sample in enumerate(sample_questions):
+            if sample_columns[index % 2].button(sample, key=f"react_sample_{index}", use_container_width=True):
+                st.session_state.react_query_text = sample
+
+        question = st.text_area(
+            "Enter a multi-step care planning goal...",
+            key="react_query_text",
+            height=130,
+        )
+        max_steps = st.slider(
+            "Max ReAct steps",
+            min_value=1,
+            max_value=8,
+            value=5,
+            step=1,
+            help="Upper bound on Reason -> Act -> Observe iterations.",
+        )
+        st.caption(f"Using namespace `{namespace}` with Top-K `{top_k}` from the sidebar.")
+
+        if st.button("Run ReAct Agent", type="primary", use_container_width=True):
+            if not REACT_AGENT_AVAILABLE or run_react_care_agent is None:
+                st.error("ReAct Care Planner backend is not available.")
+                with st.expander("Import error"):
+                    st.code(REACT_AGENT_IMPORT_ERROR or "Unknown import error.", language="text")
+                return
+            if not question.strip():
+                st.warning("Enter a care planning goal first.")
+                return
+            with st.spinner("Running bounded ReAct Care Planner..."):
+                result = run_react_care_agent(
+                    question.strip(),
+                    namespace=namespace,
+                    top_k=top_k,
+                    max_steps=max_steps,
+                    thread_id="synataric-react-ui",
+                )
+            st.session_state.react_latest_result = result
+            st.session_state.react_latest_question = question.strip()
+
+
+def render_react_metrics(result: dict) -> None:
+    tool_calls = result.get("tool_calls") or []
+    warnings = result.get("warnings") or []
+    errors = result.get("errors") or []
+    columns = st.columns(4)
+    columns[0].metric("Status", result.get("status", "N/A"))
+    columns[1].metric("Step Count", result.get("step_count", 0))
+    columns[2].metric("Max Steps", result.get("max_steps", 0))
+    columns[3].metric("Tool Calls", len(tool_calls))
+    columns = st.columns(3)
+    columns[0].metric("Requires Human", "Yes" if result.get("requires_human") else "No")
+    columns[1].metric("Warnings", len(warnings))
+    columns[2].metric("Errors", len(errors))
+
+
+def render_react_timeline(result: dict) -> None:
+    st.markdown("### ReAct Loop Timeline")
+    log_lines = result.get("execution_log") or []
+    if not log_lines:
+        st.info("Run the ReAct agent to see the Reason -> Act -> Observe loop.")
+        return
+    with st.expander("View loop timeline", expanded=True):
+        for index, line in enumerate(log_lines, start=1):
+            st.write(f"{index}. {line}")
+
+
+def render_react_final_answer(result: dict) -> None:
+    st.markdown("### Final Care Navigation Answer")
+    status = result.get("status")
+    answer = result.get("final_answer") or "I don't have enough context to answer this from the available Synataric corpus."
+    if status == "unsafe":
+        st.warning("Safety boundary triggered.")
+        st.error(answer)
+    elif status == "out_of_scope":
+        st.info("This request is outside Synataric healthcare travel and care navigation.")
+        st.warning(answer)
+    elif status == "needs_human":
+        st.warning("Human clarification required")
+        st.write(result.get("human_question") or answer)
+    else:
+        st.success(answer)
+    st.caption("Educational healthcare navigation only. Not medical advice. Does not diagnose or prescribe.")
+
+
+def render_react_tool_calls(result: dict) -> None:
+    st.markdown("### Tools Called")
+    tool_calls = result.get("tool_calls") or []
+    if not tool_calls:
+        st.info("No tools were called.")
+        return
+    st.dataframe(_react_tool_calls_dataframe(tool_calls), use_container_width=True, hide_index=True)
+
+
+def render_react_observations(result: dict) -> None:
+    st.markdown("### Observations")
+    observations = result.get("observations") or []
+    if not observations:
+        st.info("No observations returned yet.")
+        return
+
+    for index, observation in enumerate(observations, start=1):
+        tool_name = observation.get("tool_name", "tool")
+        with st.expander(f"Observation #{index} - {tool_name}", expanded=index == 1):
+            cols = st.columns(3)
+            cols[0].metric("Tool", tool_name)
+            cols[1].metric("Status", observation.get("status", "N/A"))
+            cols[2].metric("Warnings", len(observation.get("warnings") or []))
+
+            answer = observation.get("answer") or "No answer returned."
+            st.markdown("**Answer Summary**")
+            st.write(_short(answer, 1200))
+            if len(str(answer)) > 1200:
+                st.markdown("**Full Answer**")
+                st.text_area(
+                    "Full answer",
+                    value=str(answer),
+                    height=220,
+                    disabled=True,
+                    key=f"react_full_answer_{index}",
+                    label_visibility="collapsed",
+                )
+
+            source_names = _react_observation_sources(observation)
+            st.markdown("**Sources**")
+            if source_names:
+                st.write(", ".join(source_names))
+            else:
+                st.caption("No sources returned for this observation.")
+
+            evidence = observation.get("evidence") or []
+            st.markdown("**Evidence Snippets**")
+            if evidence:
+                for evidence_index, item in enumerate(evidence[:5], start=1):
+                    source = _react_source_name(item.get("source"))
+                    st.write(f"{evidence_index}. {source}: {_short(item.get('snippet', ''), 360)}")
+            else:
+                st.caption("No evidence snippets returned.")
+
+            warnings = observation.get("warnings") or []
+            if warnings:
+                st.warning("\n".join(f"- {warning}" for warning in warnings))
+
+            if st.checkbox("Show raw observation", key=f"react_raw_observation_{index}"):
+                st.json(_clean_react_observation(observation))
+
+
+def render_react_warnings_errors(result: dict) -> None:
+    st.markdown("### Warnings / Errors")
+    warnings = result.get("warnings") or []
+    errors = result.get("errors") or []
+    if warnings:
+        st.warning("\n".join(f"- {warning}" for warning in warnings))
+    if errors:
+        st.error("\n".join(f"- {error}" for error in errors))
+    if not warnings and not errors:
+        st.success("No warnings or errors.")
+
+
+def render_react_comparison_panel() -> None:
+    with st.container(border=True):
+        st.markdown("### Router Agent vs ReAct Care Planner")
+        left, right = st.columns(2)
+        with left:
+            st.markdown("**Router Agent**")
+            st.write("Best for single-intent questions")
+            st.write("Usually selects one tool")
+            st.write("More predictable and cheaper")
+        with right:
+            st.markdown("**ReAct Care Planner**")
+            st.write("Best for multi-step care planning goals")
+            st.write("Can call multiple tools in sequence")
+            st.write("More flexible but higher latency and cost")
+        st.caption("Use the lightest architecture that works.")
+
+
+def render_react_care_planner_page(strategy: str, top_k: int) -> None:
+    render_header()
+    st.markdown("## ReAct Care Planner")
+    st.write(
+        "This page demonstrates a bounded ReAct-style agent loop. Unlike the router agent, "
+        "which usually selects one tool, the ReAct Care Planner can call multiple Synataric "
+        "tools in sequence, observe each result, and decide what to do next."
+    )
+    st.caption("Goal -> Reason -> Act with tool -> Observe result -> Decide next step -> Repeat -> Final answer")
+
+    if not REACT_AGENT_AVAILABLE:
+        st.error("ReAct Care Planner backend is not available.")
+        with st.expander("Import error"):
+            st.code(REACT_AGENT_IMPORT_ERROR or "Unknown import error.", language="text")
+        return
+
+    namespace = _namespace(strategy)
+    render_react_query_panel(namespace, top_k)
+    render_react_comparison_panel()
+
+    result = st.session_state.react_latest_result
+    if not result:
+        st.info("Run a care planning goal to see the ReAct loop timeline, tool calls, observations, and final answer.")
+        return
+
+    status = result.get("status")
+    if status == "needs_human":
+        st.warning("Human clarification required")
+        st.write(result.get("human_question") or "Please provide more information so I can continue.")
+    elif status == "unsafe":
+        st.warning("Unsafe medical request boundary triggered.")
+    elif status == "out_of_scope":
+        st.info("Out-of-scope request boundary triggered.")
+
+    render_react_metrics(result)
+    render_react_timeline(result)
+    render_react_final_answer(result)
+    tool_tab, observation_tab, log_tab, warning_tab = st.tabs(["Tool Calls", "Observations", "Execution Log", "Warnings / Errors"])
+    with tool_tab:
+        render_react_tool_calls(result)
+    with observation_tab:
+        render_react_observations(result)
+    with log_tab:
+        render_react_timeline(result)
+    with warning_tab:
+        render_react_warnings_errors(result)
+
+
 def render_ask_page(strategy: str, top_k: int) -> None:
     render_header()
     question, generate = render_query_panel()
@@ -941,7 +1549,7 @@ with st.sidebar:
         value=False,
         help="Reveal diagnostics, evaluation, and chunking comparison pages.",
     )
-    page_options = ["Ask Navigator", "Find Evidence"]
+    page_options = ["Ask Navigator", "Agent Navigator", "ReAct Care Planner", "Find Evidence"]
     if show_technical_tabs:
         page_options.extend(["RAG Diagnostics", "Evaluation Dashboard", "Chunk Strategy Comparison"])
     page = st.radio(
@@ -969,6 +1577,10 @@ with st.sidebar:
 
 if page == "Ask Navigator":
     render_ask_page(strategy, top_k)
+elif page == "Agent Navigator":
+    render_agent_page(strategy, top_k)
+elif page == "ReAct Care Planner":
+    render_react_care_planner_page(strategy, top_k)
 elif page == "Find Evidence":
     render_find_evidence_page(strategy, top_k)
 elif page == "RAG Diagnostics":

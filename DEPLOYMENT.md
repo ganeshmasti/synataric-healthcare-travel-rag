@@ -14,11 +14,11 @@ This app is ready for Streamlit Community Cloud. The public app runs `app.py` an
 python ingest.py
 ```
 
-3. Push the app to GitHub:
+3. Push the app to GitHub. Stage only source, tests, and documentation. Do not use `git add .` if local cache files or secrets are present.
 
 ```bash
-git add .
-git commit -m "Prepare Streamlit cloud deployment"
+git add app.py README.md DEPLOYMENT.md src/agent_graph.py src/agent_intents.py src/agent_recovery.py src/agent_session.py src/agent_tools.py src/react_care_agent.py
+git commit -m "Add agent navigator and ReAct care planner"
 git push origin main
 ```
 
@@ -47,6 +47,9 @@ LANGCHAIN_PROJECT = "Synataric-Navigator"
 
 ## Public Demo Notes
 
-- Keep the public app on the user-facing `Ask Navigator` page by default.
+- Use `Ask Navigator` for the original single-question RAG demo.
+- Use `Agent Navigator` to demo intent routing, tool selection, safety handling, and human clarification.
+- Use `ReAct Care Planner` to demo bounded multi-step care planning with Reason -> Act -> Observe loops.
 - Use `Show technical details` only when demoing the RAG internals.
 - Do not publish `.env` or `.streamlit/secrets.toml`.
+- Rotate any API key that has appeared in screenshots, terminal output, or editor selections before pushing publicly.

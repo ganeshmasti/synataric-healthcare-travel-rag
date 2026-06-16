@@ -4,6 +4,16 @@ Synataric Navigator is a code-heavy LangChain + LangGraph RAG application for he
 
 The included corpus is illustrative sample data only. It is not medical advice, diagnosis, or treatment guidance.
 
+## Latest Agentic Features
+
+The Streamlit app now includes three user-facing modes:
+
+- `Ask Navigator`: the original grounded RAG experience for cited healthcare travel answers.
+- `Agent Navigator`: an intent-routed agent that classifies the question, selects one Synataric tool, handles safety boundaries, and asks for missing details when needed.
+- `ReAct Care Planner`: a bounded ReAct-style care planning agent that can reason, call multiple tools in sequence, observe each result, and stop with a final care-navigation answer.
+
+The ReAct page is designed for multi-step care planning goals such as provider search, cost estimate, recovery guidance, and risk checklist generation in one bounded run.
+
 ## Architecture
 
 Pipeline:
@@ -21,6 +31,11 @@ Main components:
 - `src/reranking.py`: reranks with FlashRank and falls back gracefully.
 - `src/rag_chain.py`: formats cited context and calls `ChatOpenAI`.
 - `src/graph.py`: defines the LangGraph workflow.
+- `src/agent_intents.py`: classifies healthcare navigation intent and safety boundaries.
+- `src/agent_tools.py`: wraps the existing RAG pipeline as provider, cost, recovery, risk, travel, evidence, safety, and clarification tools.
+- `src/agent_graph.py`: routes intent to the correct tool for the Agent Navigator page.
+- `src/agent_session.py`: manages human-in-the-loop clarification state for the router agent.
+- `src/react_care_agent.py`: implements the bounded ReAct care planning loop.
 - `app.py`: Streamlit user interface.
 
 ## Setup
@@ -59,6 +74,35 @@ This creates sample data if needed, loads documents, cleans them, creates fixed 
 streamlit run app.py
 ```
 
+Use the sidebar to switch between:
+
+1. `Ask Navigator`
+2. `Agent Navigator`
+3. `ReAct Care Planner`
+4. `Find Evidence`
+
+Enable `Show technical details` in the sidebar to reveal diagnostics, evaluation, and chunking comparison pages.
+
+## Agent CLI Tests
+
+Run the router-style Agent Navigator backend:
+
+```bash
+python -m src.agent_graph
+```
+
+Run the bounded ReAct Care Planner backend:
+
+```bash
+python -m src.react_care_agent
+```
+
+For local testing without LangSmith network calls:
+
+```bash
+set LANGCHAIN_TRACING_V2=false
+```
+
 ## Deploy
 
 For a public Streamlit Community Cloud demo, see `DEPLOYMENT.md`. Use `app.py` as the entry point and store API keys in Streamlit secrets, using `.streamlit/secrets.toml.example` as the template.
@@ -69,6 +113,12 @@ For a public Streamlit Community Cloud demo, see `DEPLOYMENT.md`. Use `app.py` a
 - What should a caregiver ask before knee replacement travel?
 - What are illustrative cost ranges for cardiac bypass and recovery logistics?
 - Which urgent symptoms should not be handled by the navigator?
+- Where can I find good cataract surgery in India?
+- What is the cost of cataract surgery in Bangalore?
+- Create a care travel plan for cataract surgery in Bangalore including providers, cost, recovery, and risks.
+- Plan my travel for surgery in Bangalore.
+- Should I take antibiotics after surgery?
+- Who won the Super Bowl in 2024?
 
 ## Safety Positioning
 
