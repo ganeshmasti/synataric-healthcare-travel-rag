@@ -5,6 +5,7 @@ from langchain_openai import ChatOpenAI
 
 from prompts.rag_prompt import rag_prompt
 from src.config import RAW_DATA_DIR, load_settings, traceable
+from src.output_sanitizer import sanitize_source_value, sanitize_sources, sanitize_text
 
 
 def _short_fact(text: str, limit: int = 220) -> str:
@@ -15,7 +16,7 @@ def _short_fact(text: str, limit: int = 220) -> str:
 def format_docs_for_context(docs: List[Document]) -> str:
     blocks = []
     for i, doc in enumerate(docs, start=1):
-        source = doc.metadata.get("source", "unknown")
+        source = sanitize_source_value(doc.metadata.get("source", "unknown"))
         row = doc.metadata.get("row_id")
         label = f"[Source {i}: {source}" + (f", row {row}" if row else "") + "]"
         blocks.append(f"{label}\n{doc.page_content}")
@@ -76,4 +77,5 @@ def generate_answer(question: str, docs: List[Document]) -> Tuple[str, List[dict
     chain = rag_prompt | llm
     result = chain.invoke({"context": context, "question": question})
     sources = source_metadata(docs)
-    return append_citations(result.content, sources), sources
+    answer = sanitize_text(append_citations(result.content, sources))
+    return answer, sanitize_sources(sources)

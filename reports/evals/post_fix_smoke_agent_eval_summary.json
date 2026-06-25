@@ -1,0 +1,90 @@
+{
+  "total_cases": 10,
+  "agent_mode_counts": {
+    "router_agent": 10
+  },
+  "scenario_type_counts": {
+    "happy_path": 5,
+    "known_failure": 2,
+    "edge_case": 3
+  },
+  "metrics": {
+    "intent_accuracy": {
+      "average_score": 0.9,
+      "pass_rate": 0.9
+    },
+    "status_accuracy": {
+      "average_score": 1.0,
+      "pass_rate": 1.0
+    },
+    "tool_selection_accuracy": {
+      "average_score": 1.0,
+      "pass_rate": 1.0
+    },
+    "tool_sequence_accuracy": {
+      "average_score": 1.0,
+      "pass_rate": 1.0
+    },
+    "source_hit_rate": {
+      "average_score": 0.95,
+      "pass_rate": 1.0
+    },
+    "human_handoff_accuracy": {
+      "average_score": 1.0,
+      "pass_rate": 1.0
+    },
+    "safety_refusal_accuracy": {
+      "average_score": 1.0,
+      "pass_rate": 1.0
+    },
+    "out_of_scope_accuracy": {
+      "average_score": 1.0,
+      "pass_rate": 1.0
+    },
+    "forbidden_behavior_absence": {
+      "average_score": 1.0,
+      "pass_rate": 1.0
+    },
+    "required_answer_criteria_match": {
+      "average_score": 1.0,
+      "pass_rate": 1.0
+    },
+    "max_step_compliance": {
+      "average_score": 1.0,
+      "pass_rate": 1.0
+    },
+    "task_completion_score": {
+      "average_score": 1.0,
+      "pass_rate": 1.0
+    },
+    "trajectory_correctness": {
+      "average_score": 1.0,
+      "pass_rate": 1.0
+    },
+    "local_path_leakage_absence": {
+      "average_score": 1.0,
+      "pass_rate": 1.0
+    }
+  },
+  "overall_average_score": 0.9893,
+  "average_latency_seconds": 5.7648,
+  "p50_latency_seconds": 5.1104,
+  "p95_latency_seconds": 11.8203,
+  "average_react_step_count": 0.0,
+  "max_observed_step_count": 0,
+  "average_tool_calls": 1.0,
+  "failure_count": 1,
+  "run_name": "post_fix_smoke",
+  "generated_at": "2026-06-24T19:15:11.403532+00:00",
+  "tool_call_counts": {
+    "cost_estimate_tool": 1,
+    "provider_search_tool": 1,
+    "recovery_guidance_tool": 1,
+    "risk_checklist_tool": 1,
+    "safety_response_tool": 1,
+    "ask_human_tool": 2,
+    "find_evidence_tool": 1,
+    "out_of_scope_response_tool": 2
+  },
+  "latency_stddev_seconds": 3.8233
+}

@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 from src.rag_chain import generate_answer
 from src.reranking import rerank_documents
 from src.retrieval import retrieve_documents
+from src.output_sanitizer import sanitize_result_dict, sanitize_sources, sanitize_text
 
 
 try:
@@ -142,7 +143,7 @@ def run_domain_rag_tool(
             error=str(exc),
         )
 
-    return AgentToolResult(
+    return _sanitize_tool_result(AgentToolResult(
         tool_name=tool_name,
         status=status,
         question=question,
@@ -153,7 +154,7 @@ def run_domain_rag_tool(
         retrieved_count=len(retrieved_docs),
         reranked_count=len(reranked_docs),
         warnings=warnings,
-    )
+    ))
 
 
 def score_doc_for_domain(doc: Document, domain: str, requested_procedure: str | None = None) -> int:
@@ -244,7 +245,7 @@ def run_general_rag(question: str, namespace: str | None = None, top_k: int = 12
 
 
 def run_safety_response(question: str, safety_flags: list[str] | None = None) -> AgentToolResult:
-    return AgentToolResult(
+    return _sanitize_tool_result(AgentToolResult(
         tool_name="safety_response_tool",
         status=STATUS_UNSAFE,
         question=question,
@@ -255,7 +256,7 @@ def run_safety_response(question: str, safety_flags: list[str] | None = None) ->
         ),
         requires_human=True,
         safety_flags=safety_flags or [],
-    )
+    ))
 
 
 def run_out_of_scope_response(question: str, reason: str | None = None) -> AgentToolResult:
@@ -267,25 +268,25 @@ def run_out_of_scope_response(question: str, reason: str | None = None) -> Agent
             "Synataric corpus. I don't have enough context to answer this request. Try asking about procedures, "
             "providers, costs, recovery, risks, or travel planning."
         )
-    return AgentToolResult(
+    return _sanitize_tool_result(AgentToolResult(
         tool_name="out_of_scope_response_tool",
         status=STATUS_OUT_OF_SCOPE,
         question=question,
         answer=answer,
         requires_human=False,
         warnings=["out_of_scope_request"],
-    )
+    ))
 
 
 def run_ask_human(question: str, missing_fields: list[str]) -> AgentToolResult:
-    return AgentToolResult(
+    return _sanitize_tool_result(AgentToolResult(
         tool_name="ask_human_tool",
         status=STATUS_NEEDS_HUMAN,
         question=question,
         requires_human=True,
         human_question=_build_human_question(missing_fields),
         warnings=[f"missing_{field}" for field in missing_fields],
-    )
+    ))
 
 
 def get_agent_tools() -> list:
@@ -421,6 +422,11 @@ def _format_evidence(docs: list[Document]) -> list[dict]:
             }
         )
     return evidence
+
+
+def _sanitize_tool_result(result: AgentToolResult) -> AgentToolResult:
+    result_dict = sanitize_result_dict(result.model_dump())
+    return AgentToolResult.model_validate(result_dict)
 
 
 def _with_fallback_rank(doc: Document, rank: int) -> Document:

@@ -32,6 +32,7 @@ from src.agent_tools import (
     run_travel_planning,
 )
 from src.config import configure_langsmith, load_settings, traceable
+from src.output_sanitizer import sanitize_text
 
 
 try:
@@ -385,7 +386,7 @@ def final_response_node(state: SynataricAgentState) -> SynataricAgentState:
         answer = build_safe_fallback_answer(state["question"], "empty_answer")
         status = "no_evidence"
 
-    updated = {**state, "answer": answer, "status": status}
+    updated = {**state, "answer": sanitize_text(answer), "status": status}
     return _append_log(updated, "Final response prepared.")
 
 

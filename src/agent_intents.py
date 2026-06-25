@@ -149,12 +149,13 @@ def _finalize_classification(
     unsafe_flags = detect_unsafe_medical(question)
     out_of_scope, out_of_scope_reason = detect_out_of_scope(question)
 
-    if out_of_scope:
-        intent = "out_of_scope"
-        missing_fields = []
-    elif unsafe_flags:
+    if unsafe_flags:
         intent = "unsafe_medical"
         safety_flags = list(dict.fromkeys(safety_flags + unsafe_flags))
+        missing_fields = []
+    elif out_of_scope:
+        intent = "out_of_scope"
+        missing_fields = []
     elif intent == "unsafe_medical":
         safety_flags = safety_flags or ["urgent_medical_judgment"]
     elif hint and hint != "general_navigation":
@@ -175,10 +176,36 @@ def _finalize_classification(
     if intent in {"unsafe_medical", "find_evidence", "risk_checklist", "out_of_scope"}:
         missing_fields = []
 
-    if intent in {"provider_search", "cost_estimate", "recovery_guidance", "travel_planning"} and not procedure:
+    if _is_provider_listing_query(question):
+        intent = "provider_search"
+        missing_fields = []
+    elif _is_local_stay_budget_query(question):
+        if intent not in {"travel_planning", "cost_estimate"}:
+            intent = "travel_planning"
+        missing_fields = []
+    elif _is_documents_or_checklist_query(question):
+        if intent not in {"risk_checklist", "general_navigation", "travel_planning"}:
+            intent = "risk_checklist"
+        missing_fields = []
+    elif _is_caregiver_support_query(question) and procedure:
+        if intent not in {"travel_planning", "recovery_guidance"}:
+            intent = "travel_planning"
+        missing_fields = []
+    elif _is_cost_policy_question(question):
+        if intent not in {"general_navigation", "cost_estimate"}:
+            intent = "general_navigation"
+        missing_fields = []
+
+    requires_procedure = (
+        intent in {"provider_search", "cost_estimate", "recovery_guidance", "travel_planning"}
+        and not _can_answer_without_procedure(question, intent)
+    )
+    if requires_procedure and not procedure:
         missing_fields.append("procedure")
-    if intent == "travel_planning" and not location:
+    if intent == "travel_planning" and not location and not _can_answer_without_destination(question):
         missing_fields.append("destination")
+        if procedure:
+            intent = "needs_clarification"
     if _asks_for_care_plan(question) and not procedure:
         missing_fields.append("procedure")
     if intent == "needs_clarification" and "care_topic" not in missing_fields and not procedure:
@@ -274,6 +301,9 @@ def detect_unsafe_medical(question: str) -> list[str]:
             "prescription",
             "should i take",
             "can i take",
+            "treatment instructions",
+            "post-op medication",
+            "post op medication",
         ],
     ):
         flags.append("prescription_or_treatment_advice")
@@ -330,9 +360,6 @@ def is_healthcare_navigation_question(question: str) -> bool:
 
 def keyword_intent_hint(question: str) -> str | None:
     normalized = _normalize(question)
-    out_of_scope, _reason = detect_out_of_scope(question)
-    if out_of_scope:
-        return "out_of_scope"
     if _contains_any(
         normalized,
         [
@@ -347,6 +374,9 @@ def keyword_intent_hint(question: str) -> str | None:
             "diagnose",
             "should i take",
             "can i take",
+            "treatment instructions",
+            "post-op medication",
+            "post op medication",
             "emergency decision",
             "severe chest pain",
             "stroke",
@@ -355,6 +385,9 @@ def keyword_intent_hint(question: str) -> str | None:
         ],
     ):
         return "unsafe_medical"
+    out_of_scope, _reason = detect_out_of_scope(question)
+    if out_of_scope:
+        return "out_of_scope"
     if _contains_any(
         normalized,
         ["where is this explained", "where did this come from", "show source", "find evidence", "where is", "source document"],
@@ -376,6 +409,8 @@ def keyword_intent_hint(question: str) -> str | None:
         ],
     ):
         return "provider_search"
+    if _is_cost_policy_question(question):
+        return "general_navigation"
     if _contains_any(normalized, ["cost", "price", "estimate", "budget", "package", "fee", "charges"]):
         return "cost_estimate"
     if _contains_any(normalized, ["recovery", "post-op", "post op", "postoperative", "healing", "follow-up", "follow up", "after surgery"]):
@@ -412,6 +447,51 @@ def _is_extremely_vague_request(question: str) -> bool:
 def _mentions_general_care_without_location(question: str) -> bool:
     normalized = _normalize(question)
     return _contains_any(normalized, ["need help with care", "help with care", "care plan"])
+
+
+def _is_provider_listing_query(question: str) -> bool:
+    normalized = _normalize(question)
+    return _contains_any(normalized, ["synataric data", "listed in bangalore", "providers are in"]) and _contains_any(
+        normalized, ["hospital", "hospitals", "provider", "providers"]
+    )
+
+
+def _is_local_stay_budget_query(question: str) -> bool:
+    normalized = _normalize(question)
+    return _contains_any(normalized, ["local stay", "stay cost", "serviced apartment", "serviced apartments", "hotel"]) and _contains_any(
+        normalized, ["budget", "cost", "estimate", "how much", "bangalore"]
+    )
+
+
+def _is_documents_or_checklist_query(question: str) -> bool:
+    normalized = _normalize(question)
+    return _contains_any(normalized, ["documents", "carry", "checklist", "medical records"])
+
+
+def _is_cost_policy_question(question: str) -> bool:
+    normalized = _normalize(question)
+    return _contains_any(normalized, ["final prices", "illustrative", "guaranteed", "cost estimates final", "estimates guaranteed"])
+
+
+def _is_caregiver_support_query(question: str) -> bool:
+    normalized = _normalize(question)
+    return _contains_any(normalized, ["caregiver", "support person", "family support"])
+
+
+def _can_answer_without_procedure(question: str, intent: str) -> bool:
+    if _is_provider_listing_query(question):
+        return True
+    if _is_local_stay_budget_query(question):
+        return True
+    if _is_documents_or_checklist_query(question):
+        return True
+    if _is_cost_policy_question(question):
+        return True
+    return False
+
+
+def _can_answer_without_destination(question: str) -> bool:
+    return _is_documents_or_checklist_query(question) or _is_caregiver_support_query(question) or _is_cost_policy_question(question)
 
 
 def _suggested_tools(intent: str, missing_fields: list[str]) -> list[str]:

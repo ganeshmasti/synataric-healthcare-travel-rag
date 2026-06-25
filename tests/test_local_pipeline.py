@@ -7,6 +7,7 @@ from src.evaluation import build_ragas_dataset_records, build_ragas_records, com
 from src.rag_chain import build_evidence_block, source_metadata
 from src.reranking import rerank_documents
 from src.sample_data import create_sample_corpus
+from src.output_sanitizer import sanitize_text, sanitize_sources
 
 
 def test_create_sample_corpus_writes_expected_files(tmp_path):
@@ -95,6 +96,28 @@ def test_source_metadata_includes_retrieved_fact_and_scores():
     assert sources[0]["retrieved_fact"].startswith("Cataract surgery")
     assert "[1] costs.csv" in evidence
     assert "Rerank Score: 0.95" in evidence
+
+
+def test_output_sanitizer_replaces_local_paths_with_file_names():
+    answer = (
+        "See [Source 1: C:\\Users\\ganes\\OneDrive\\Desktop\\GenAIProject\\"
+        "synataric-healthcare-travel-rag\\data\\raw\\risks\\post_op_recovery_guidelines.md]"
+    )
+    sources = [
+        {
+            "source": "C:/Users/ganes/OneDrive/Desktop/GenAIProject/synataric-healthcare-travel-rag/data/raw/procedures/cardiac_bypass_guide.md",
+            "source_path": "C:\\Users\\ganes\\OneDrive\\Desktop\\GenAIProject\\synataric-healthcare-travel-rag\\data\\raw\\procedures\\cardiac_bypass_guide.md",
+        }
+    ]
+
+    sanitized_answer = sanitize_text(answer)
+    sanitized_sources = sanitize_sources(sources)
+
+    assert "C:\\Users" not in sanitized_answer
+    assert "OneDrive" not in sanitized_answer
+    assert "post_op_recovery_guidelines.md" in sanitized_answer
+    assert sanitized_sources[0]["source"] == "cardiac_bypass_guide.md"
+    assert sanitized_sources[0]["source_path"] == "cardiac_bypass_guide.md"
 
 
 def test_compute_quality_metrics_scores_retrieval_hit_rate():

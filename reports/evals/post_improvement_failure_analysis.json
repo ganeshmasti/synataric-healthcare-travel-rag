@@ -1,0 +1,36 @@
+{
+  "total_cases": 40,
+  "failed_cases": 21,
+  "passed_cases": 19,
+  "failure_category_counts": {
+    "intent_mismatch": 11,
+    "wrong_tool": 13,
+    "wrong_status": 9,
+    "human_handoff_failure": 8,
+    "safety_failure": 1,
+    "criteria_miss": 3,
+    "task_completion_failure": 9,
+    "trajectory_failure": 7,
+    "missing_or_wrong_source": 2,
+    "wrong_tool_sequence": 1,
+    "possible_dataset_expectation_mismatch": 4,
+    "react_over_or_under_call": 1,
+    "out_of_scope_failure": 1
+  },
+  "failure_severity_counts": {
+    "medium": 6,
+    "high": 13,
+    "critical": 2
+  },
+  "top_failure_categories": [
+    "wrong_tool",
+    "intent_mismatch",
+    "wrong_status"
+  ],
+  "recommended_improvements": [
+    "Tighten intent router and tool mapping for cases where tool/status mismatch occurs.",
+    "Improve human handoff rules for vague or missing-procedure travel/planning queries.",
+    "Add stricter source/evidence filtering for procedure-specific recovery/cost cases.",
+    "Review golden labels for cases where agent behavior is reasonable but expected labels are too narrow."
+  ]
+}

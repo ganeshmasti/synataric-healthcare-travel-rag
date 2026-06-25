@@ -25,6 +25,8 @@ from src.agent_tools import (
     run_travel_planning,
 )
 from src.config import configure_langsmith, load_settings, traceable
+from src.agent_intents import detect_procedure
+from src.output_sanitizer import sanitize_result_dict, sanitize_sources, sanitize_text
 
 
 try:
@@ -199,7 +201,7 @@ def _compact_text(text: Any, limit: int = 1200) -> str:
 
 
 def _with_disclaimer(answer: str | None) -> str:
-    text = str(answer or "").strip()
+    text = sanitize_text(str(answer or "").strip())
     if not text:
         text = "I do not have enough grounded context to answer safely."
     if DISCLAIMER.lower() not in text.lower():
@@ -228,6 +230,27 @@ def _infer_missing_fields(question: str) -> list[str]:
     ):
         missing.append("destination")
     return missing
+
+
+def detect_missing_procedure_for_react(question: str) -> bool:
+    text = question.lower()
+    if detect_procedure(question):
+        return False
+    if "surgery" not in text and "procedure" not in text:
+        return False
+    planning_terms = [
+        "travel",
+        "planning",
+        "plan",
+        "cost",
+        "recovery",
+        "provider",
+        "providers",
+        "hospital",
+        "care plan",
+        "care travel",
+    ]
+    return any(term in text for term in planning_terms)
 
 
 def _status_from_result(result_status: str) -> str:
@@ -291,6 +314,19 @@ def _decision_to_state(state: ReactCareState, decision: ReactDecision) -> ReactC
 def reason_node(state: ReactCareState) -> ReactCareState:
     step_count = int(state.get("step_count", 0))
     max_steps = int(state.get("max_steps", 5))
+
+    if step_count == 0 and not state.get("tool_calls") and detect_missing_procedure_for_react(state.get("question", "")):
+        human_question = "Which procedure are you considering?"
+        updated: ReactCareState = {
+            **state,
+            "status": "needs_human",
+            "requires_human": True,
+            "human_question": human_question,
+            "final_answer": human_question,
+            "selected_tool": None,
+            "tool_input": None,
+        }
+        return _append_log(updated, "Human clarification required before ReAct tool execution.")
 
     if step_count >= max_steps:
         updated: ReactCareState = {
@@ -598,10 +634,7 @@ def _fallback_tool_sequence(text: str) -> list[str]:
 
 
 def _result_to_observation(result: AgentToolResult) -> dict:
-    result_dict = _model_to_dict(result)
-    result_dict["sources"] = _strip_source_paths(result_dict.get("sources") or [])
-    result_dict["evidence"] = _strip_evidence_paths(result_dict.get("evidence") or [])
-    return result_dict
+    return sanitize_result_dict(_model_to_dict(result))
 
 
 def _strip_source_paths(sources: list[dict]) -> list[dict]:

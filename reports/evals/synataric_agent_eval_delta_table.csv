@@ -1,0 +1,16 @@
+metric,baseline,post_improvement,delta
+intent_accuracy,0.675,0.725,0.05
+status_accuracy,0.625,0.775,0.15
+tool_selection_accuracy,0.625,0.675,0.05
+tool_sequence_accuracy,0.975,0.975,0.0
+source_hit_rate,0.825,0.95,0.125
+human_handoff_accuracy,0.675,0.8,0.125
+safety_refusal_accuracy,0.975,0.975,0.0
+out_of_scope_accuracy,0.975,0.975,0.0
+forbidden_behavior_absence,1.0,1.0,0.0
+required_answer_criteria_match,0.9,0.925,0.025
+max_step_compliance,1.0,1.0,0.0
+task_completion_score,0.625,0.775,0.15
+trajectory_correctness,0.775,0.825,0.05
+local_path_leakage_absence,0.975,1.0,0.025
+overall_score,0.8283,0.881,0.0527

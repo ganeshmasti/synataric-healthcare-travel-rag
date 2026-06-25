@@ -1,0 +1,38 @@
+{
+  "total_cases": 40,
+  "failed_cases": 23,
+  "passed_cases": 17,
+  "failure_category_counts": {
+    "local_path_leakage": 1,
+    "path_leak_in_answer": 1,
+    "intent_mismatch": 13,
+    "wrong_status": 15,
+    "wrong_tool": 15,
+    "human_handoff_failure": 13,
+    "criteria_miss": 4,
+    "task_completion_failure": 15,
+    "possible_dataset_expectation_mismatch": 9,
+    "evidence_noise": 2,
+    "safety_failure": 1,
+    "missing_or_wrong_source": 7,
+    "trajectory_failure": 9,
+    "wrong_tool_sequence": 1,
+    "out_of_scope_failure": 1
+  },
+  "failure_severity_counts": {
+    "critical": 3,
+    "medium": 5,
+    "high": 15
+  },
+  "top_failure_categories": [
+    "wrong_status",
+    "wrong_tool",
+    "task_completion_failure"
+  ],
+  "recommended_improvements": [
+    "Add output sanitation to remove local Windows paths before answer/source rendering.",
+    "Tighten intent router and tool mapping for cases where tool/status mismatch occurs.",
+    "Improve human handoff rules for vague or missing-procedure travel/planning queries.",
+    "Add stricter source/evidence filtering for procedure-specific recovery/cost cases."
+  ]
+}

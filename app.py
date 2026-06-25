@@ -385,6 +385,98 @@ def _short(text: str, limit: int = 360) -> str:
     return value if len(value) <= limit else f"{value[:limit].rstrip()}..."
 
 
+EXECUTION_DASHBOARD_STAGES = [
+    ("Question Received", "Captures the user's care navigation question."),
+    ("Query Embedding", "Converts the user question into a semantic search vector."),
+    ("Pinecone Retrieval", "Searches the configured Pinecone namespace for candidate context."),
+    ("Candidate Chunks Retrieved", "Counts the raw context chunks returned before reranking."),
+    ("FlashRank Reranking", "Reranks candidate chunks for question relevance."),
+    ("Top Evidence Selected", "Selects the strongest chunks for grounded generation."),
+    ("Prompt Assembly", "Builds the final grounded prompt with evidence and safety rules."),
+    ("GPT Answer Generation", "Generates the answer from the assembled grounded context."),
+    ("Final Response", "Prepares the response, citations, and fallback behavior."),
+    ("Evidence + Citations", "Shows the source files and evidence scores used for the answer."),
+]
+
+
+def build_pipeline_stages() -> list[dict]:
+    return [
+        {"index": index, "label": label, "explanation": explanation, "status": "Pending", "elapsed": ""}
+        for index, (label, explanation) in enumerate(EXECUTION_DASHBOARD_STAGES)
+    ]
+
+
+def update_stage_status(stages: list[dict], current_index: int, status: str, elapsed: float | None = None) -> list[dict]:
+    updated = []
+    for index, stage in enumerate(stages):
+        next_stage = dict(stage)
+        if index < current_index:
+            next_stage["status"] = "Complete"
+        elif index == current_index:
+            next_stage["status"] = status
+            if elapsed is not None:
+                next_stage["elapsed"] = f"{elapsed:.1f}s"
+        else:
+            next_stage["status"] = "Pending"
+        updated.append(next_stage)
+    return updated
+
+
+def build_execution_metrics(
+    result: dict | None,
+    current_stage: str,
+    namespace: str,
+    top_k: int,
+    model: str,
+    langsmith_enabled: bool,
+) -> dict:
+    result = result or {}
+    return {
+        "Current Stage": current_stage,
+        "Namespace": namespace,
+        "Top-K": str(top_k),
+        "Model": model,
+        "Retrieved Chunks": str(len(result.get("retrieved_docs") or [])),
+        "Reranked Chunks": str(len(result.get("reranked_docs") or [])),
+        "Sources Used": str(len(result.get("sources") or [])),
+        "LangSmith Status": "Tracing Enabled" if langsmith_enabled else "Tracing Disabled",
+    }
+
+
+def build_grounding_summary(result: dict | None) -> dict:
+    result = result or {}
+    sources = [_source_label(source) for source in result.get("sources") or []]
+    reranking_scores = []
+    for row in result.get("reranking_results") or []:
+        source = row.get("Source") or row.get("source") or row.get("file_name") or "unknown"
+        score = row.get("Rerank Score", row.get("rerank_score"))
+        reranking_scores.append(f"{source}: {_format_score(score)}")
+
+    evidence_count = len(result.get("reranked_docs") or [])
+    chunk_label = "evidence chunk" if evidence_count == 1 else "evidence chunks"
+    answer = str(result.get("answer") or "").lower()
+    refusal_detected = any(
+        phrase in answer
+        for phrase in [
+            "do not have enough",
+            "insufficient",
+            "can't answer",
+            "cannot answer",
+            "outside the synataric corpus",
+        ]
+    )
+    return {
+        "source_files": sources,
+        "reranking_scores": reranking_scores,
+        "prompt_summary": f"Prompt assembled with {evidence_count} {chunk_label}.",
+        "refusal_behavior": (
+            "Refusal or insufficient-context behavior detected."
+            if refusal_detected
+            else "No refusal or insufficient-context behavior detected."
+        ),
+    }
+
+
 def _init_state() -> None:
     defaults = {
         "latest_question": "",

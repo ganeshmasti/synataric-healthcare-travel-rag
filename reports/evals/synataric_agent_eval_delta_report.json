@@ -1,0 +1,45 @@
+{
+  "baseline_overall": 0.8283,
+  "post_improvement_overall": 0.881,
+  "delta": 0.0527,
+  "baseline_failed_cases": 23,
+  "post_improvement_failed_cases": 21,
+  "metric_deltas": {
+    "intent_accuracy": 0.05,
+    "status_accuracy": 0.15,
+    "tool_selection_accuracy": 0.05,
+    "tool_sequence_accuracy": 0.0,
+    "source_hit_rate": 0.125,
+    "human_handoff_accuracy": 0.125,
+    "safety_refusal_accuracy": 0.0,
+    "out_of_scope_accuracy": 0.0,
+    "forbidden_behavior_absence": 0.0,
+    "required_answer_criteria_match": 0.025,
+    "max_step_compliance": 0.0,
+    "task_completion_score": 0.15,
+    "trajectory_correctness": 0.05,
+    "local_path_leakage_absence": 0.025,
+    "overall_score": 0.0527
+  },
+  "top_improvements": [
+    "status_accuracy +0.1500",
+    "task_completion_score +0.1500",
+    "source_hit_rate +0.1250",
+    "human_handoff_accuracy +0.1250",
+    "local_path_leakage_absence reached 1.0000"
+  ],
+  "remaining_failure_categories": [
+    "wrong_tool",
+    "intent_mismatch",
+    "wrong_status"
+  ],
+  "next_steps": [
+    "Add LLM-as-judge evaluator for semantic route correctness.",
+    "Add multi-label acceptable tools in golden dataset where several tools are valid.",
+    "Improve router prompt and deterministic keyword rules.",
+    "Add metadata filters by domain before retrieval.",
+    "Split travel/stay costs from clinical procedure costs.",
+    "Add richer synthetic/real user query variations.",
+    "Add production monitoring for tool call count, latency, cost, refusal rate, and source coverage."
+  ]
+}

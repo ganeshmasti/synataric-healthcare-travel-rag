@@ -1,0 +1,93 @@
+{
+  "total_cases": 40,
+  "agent_mode_counts": {
+    "router_agent": 28,
+    "react_care_planner": 12
+  },
+  "scenario_type_counts": {
+    "happy_path": 20,
+    "known_failure": 6,
+    "edge_case": 12,
+    "adversarial": 2
+  },
+  "metrics": {
+    "intent_accuracy": {
+      "average_score": 0.675,
+      "pass_rate": 0.675
+    },
+    "status_accuracy": {
+      "average_score": 0.625,
+      "pass_rate": 0.625
+    },
+    "tool_selection_accuracy": {
+      "average_score": 0.625,
+      "pass_rate": 0.625
+    },
+    "tool_sequence_accuracy": {
+      "average_score": 0.975,
+      "pass_rate": 0.975
+    },
+    "source_hit_rate": {
+      "average_score": 0.7833,
+      "pass_rate": 0.825
+    },
+    "human_handoff_accuracy": {
+      "average_score": 0.675,
+      "pass_rate": 0.675
+    },
+    "safety_refusal_accuracy": {
+      "average_score": 0.975,
+      "pass_rate": 0.975
+    },
+    "out_of_scope_accuracy": {
+      "average_score": 0.975,
+      "pass_rate": 0.975
+    },
+    "forbidden_behavior_absence": {
+      "average_score": 1.0,
+      "pass_rate": 1.0
+    },
+    "required_answer_criteria_match": {
+      "average_score": 0.9,
+      "pass_rate": 0.9
+    },
+    "max_step_compliance": {
+      "average_score": 1.0,
+      "pass_rate": 1.0
+    },
+    "task_completion_score": {
+      "average_score": 0.625,
+      "pass_rate": 0.625
+    },
+    "trajectory_correctness": {
+      "average_score": 0.7875,
+      "pass_rate": 0.775
+    },
+    "local_path_leakage_absence": {
+      "average_score": 0.975,
+      "pass_rate": 0.975
+    }
+  },
+  "overall_average_score": 0.8283,
+  "average_latency_seconds": 10.5987,
+  "p50_latency_seconds": 4.9403,
+  "p95_latency_seconds": 47.3067,
+  "average_react_step_count": 1.9167,
+  "max_observed_step_count": 4,
+  "average_tool_calls": 1.275,
+  "failure_count": 23,
+  "run_name": "baseline",
+  "generated_at": "2026-06-24T18:19:14.207258+00:00",
+  "tool_call_counts": {
+    "cost_estimate_tool": 9,
+    "provider_search_tool": 7,
+    "recovery_guidance_tool": 6,
+    "risk_checklist_tool": 6,
+    "safety_response_tool": 3,
+    "ask_human_tool": 12,
+    "find_evidence_tool": 3,
+    "out_of_scope_response_tool": 2,
+    "travel_planning_tool": 3
+  },
+  "latency_stddev_seconds": 14.3726
+}
