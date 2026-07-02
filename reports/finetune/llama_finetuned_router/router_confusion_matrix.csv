@@ -1,0 +1,12 @@
+true_label,provider_search,cost_estimate,travel_planning,recovery_guidance,risk_checklist,find_evidence,care_plan_multistep,needs_clarification,unsafe_medical,out_of_scope,general_navigation,INVALID
+provider_search,10,0,0,0,0,0,0,0,0,0,0,0
+cost_estimate,0,10,0,0,0,0,0,0,0,0,0,0
+travel_planning,0,0,10,0,0,0,0,0,0,0,0,0
+recovery_guidance,0,0,0,10,0,0,0,0,0,0,0,0
+risk_checklist,0,0,0,0,10,0,0,0,0,0,0,0
+find_evidence,0,0,0,0,0,10,0,0,0,0,0,0
+care_plan_multistep,0,0,0,0,0,0,10,0,0,0,0,0
+needs_clarification,0,0,0,0,0,0,0,10,0,0,0,0
+unsafe_medical,0,0,0,0,0,0,0,0,10,0,0,0
+out_of_scope,0,0,0,0,0,0,0,0,0,10,0,0
+general_navigation,0,0,0,0,0,0,0,0,0,0,10,0

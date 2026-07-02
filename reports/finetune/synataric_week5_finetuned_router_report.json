@@ -1,0 +1,118 @@
+{
+  "project": "Synataric Local Care Intent Router",
+  "week": 5,
+  "task_type": "route_classification",
+  "not_a_chatbot": true,
+  "router_principle": "one message in, exactly one route label out",
+  "downstream_systems": [
+    "Synataric RAG",
+    "Synataric tools",
+    "Synataric ReAct Care Planner",
+    "safety and refusal flows"
+  ],
+  "labels": [
+    "provider_search",
+    "cost_estimate",
+    "travel_planning",
+    "recovery_guidance",
+    "risk_checklist",
+    "find_evidence",
+    "care_plan_multistep",
+    "needs_clarification",
+    "unsafe_medical",
+    "out_of_scope",
+    "general_navigation"
+  ],
+  "dataset": {
+    "source_type": "synthetic_balanced",
+    "total_rows": 550,
+    "train_rows": 440,
+    "eval_rows": 110,
+    "labels": 11,
+    "examples_per_label_total": 50,
+    "examples_per_label_train": 40,
+    "examples_per_label_eval": 10,
+    "production_readiness_note": "Production readiness requires fresh real-world holdout testing because the dataset is synthetic and balanced."
+  },
+  "training": {
+    "base_model": "meta-llama/Llama-3.2-1B-Instruct",
+    "method": "LoRA / SFT",
+    "loss_by_epoch": [
+      {
+        "epoch": 1,
+        "train_loss": 0.235017,
+        "validation_loss": 0.036771
+      },
+      {
+        "epoch": 2,
+        "train_loss": 0.014036,
+        "validation_loss": 0.004715
+      },
+      {
+        "epoch": 3,
+        "train_loss": 0.001264,
+        "validation_loss": 0.00069
+      }
+    ]
+  },
+  "existing_synataric_router_baseline": {
+    "total_examples": 110,
+    "accuracy": 0.555,
+    "macro_precision": 0.542,
+    "macro_recall": 0.555,
+    "macro_f1": 0.493,
+    "invalid_output_rate": 0.0,
+    "average_route_execution_score": 0.609,
+    "average_latency_seconds": 2.308,
+    "critical_recalls": {
+      "unsafe_medical": 0.6,
+      "out_of_scope": 1.0,
+      "needs_clarification": 0.4,
+      "care_plan_multistep": 0.0,
+      "general_navigation": 0.0
+    }
+  },
+  "fine_tuned_llama_3_2_1b_lora_router": {
+    "total_examples": 110,
+    "accuracy": 1.0,
+    "macro_precision": 1.0,
+    "macro_recall": 1.0,
+    "macro_f1": 1.0,
+    "invalid_output_rate": 0.0,
+    "average_route_execution_score": 1.0,
+    "average_latency_seconds": 0.34,
+    "smoke_test": {
+      "passed": 9,
+      "total": 9
+    },
+    "critical_recalls": {
+      "unsafe_medical": 1.0,
+      "out_of_scope": 1.0,
+      "needs_clarification": 1.0,
+      "care_plan_multistep": 1.0
+    }
+  },
+  "startup_value": [
+    "lower routing cost",
+    "lower latency",
+    "predictable tool selection",
+    "fewer frontier model calls"
+  ],
+  "does_not_prove": [
+    "production readiness",
+    "clinical correctness",
+    "provider quality",
+    "appointment readiness",
+    "PHI handling",
+    "robustness against all adversarial prompts"
+  ],
+  "production_next_steps": [
+    "Build a real-world holdout set from de-identified user-like traffic.",
+    "Evaluate base model, existing router, and fine-tuned router on the same holdout set.",
+    "Add adversarial and safety-specific tests for unsafe_medical, out_of_scope, and prompt injection.",
+    "Calibrate fallback behavior when the router emits an invalid label or low-confidence output.",
+    "Add runtime monitoring for label distribution drift, latency, invalid outputs, and safety recalls.",
+    "Decide whether care_plan_multistep should be added to the production classifier schema before integration.",
+    "Keep downstream answer generation inside Synataric RAG/tools/ReAct planner, not inside the router."
+  ]
+}

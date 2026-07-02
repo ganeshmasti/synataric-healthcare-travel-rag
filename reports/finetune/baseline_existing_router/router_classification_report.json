@@ -1,0 +1,263 @@
+{
+  "total_examples": 110,
+  "accuracy": 0.5545454545454546,
+  "macro_precision": 0.5418368173715767,
+  "macro_recall": 0.5545454545454546,
+  "macro_f1": 0.4926456355248925,
+  "per_label": {
+    "provider_search": {
+      "precision": 0.36363636363636365,
+      "recall": 0.8,
+      "f1": 0.5000000000000001,
+      "support": 10
+    },
+    "cost_estimate": {
+      "precision": 0.6666666666666666,
+      "recall": 0.6,
+      "f1": 0.631578947368421,
+      "support": 10
+    },
+    "travel_planning": {
+      "precision": 0.4166666666666667,
+      "recall": 1.0,
+      "f1": 0.5882352941176471,
+      "support": 10
+    },
+    "recovery_guidance": {
+      "precision": 0.5882352941176471,
+      "recall": 1.0,
+      "f1": 0.7407407407407407,
+      "support": 10
+    },
+    "risk_checklist": {
+      "precision": 0.5,
+      "recall": 0.4,
+      "f1": 0.4444444444444445,
+      "support": 10
+    },
+    "find_evidence": {
+      "precision": 1.0,
+      "recall": 0.3,
+      "f1": 0.4615384615384615,
+      "support": 10
+    },
+    "care_plan_multistep": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 10
+    },
+    "needs_clarification": {
+      "precision": 0.8,
+      "recall": 0.4,
+      "f1": 0.5333333333333333,
+      "support": 10
+    },
+    "unsafe_medical": {
+      "precision": 1.0,
+      "recall": 0.6,
+      "f1": 0.7499999999999999,
+      "support": 10
+    },
+    "out_of_scope": {
+      "precision": 0.625,
+      "recall": 1.0,
+      "f1": 0.7692307692307693,
+      "support": 10
+    },
+    "general_navigation": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 10
+    }
+  },
+  "confusion_matrix": {
+    "provider_search": {
+      "provider_search": 8,
+      "cost_estimate": 0,
+      "travel_planning": 2,
+      "recovery_guidance": 0,
+      "risk_checklist": 0,
+      "find_evidence": 0,
+      "care_plan_multistep": 0,
+      "needs_clarification": 0,
+      "unsafe_medical": 0,
+      "out_of_scope": 0,
+      "general_navigation": 0,
+      "INVALID": 0
+    },
+    "cost_estimate": {
+      "provider_search": 1,
+      "cost_estimate": 6,
+      "travel_planning": 3,
+      "recovery_guidance": 0,
+      "risk_checklist": 0,
+      "find_evidence": 0,
+      "care_plan_multistep": 0,
+      "needs_clarification": 0,
+      "unsafe_medical": 0,
+      "out_of_scope": 0,
+      "general_navigation": 0,
+      "INVALID": 0
+    },
+    "travel_planning": {
+      "provider_search": 0,
+      "cost_estimate": 0,
+      "travel_planning": 10,
+      "recovery_guidance": 0,
+      "risk_checklist": 0,
+      "find_evidence": 0,
+      "care_plan_multistep": 0,
+      "needs_clarification": 0,
+      "unsafe_medical": 0,
+      "out_of_scope": 0,
+      "general_navigation": 0,
+      "INVALID": 0
+    },
+    "recovery_guidance": {
+      "provider_search": 0,
+      "cost_estimate": 0,
+      "travel_planning": 0,
+      "recovery_guidance": 10,
+      "risk_checklist": 0,
+      "find_evidence": 0,
+      "care_plan_multistep": 0,
+      "needs_clarification": 0,
+      "unsafe_medical": 0,
+      "out_of_scope": 0,
+      "general_navigation": 0,
+      "INVALID": 0
+    },
+    "risk_checklist": {
+      "provider_search": 0,
+      "cost_estimate": 0,
+      "travel_planning": 3,
+      "recovery_guidance": 3,
+      "risk_checklist": 4,
+      "find_evidence": 0,
+      "care_plan_multistep": 0,
+      "needs_clarification": 0,
+      "unsafe_medical": 0,
+      "out_of_scope": 0,
+      "general_navigation": 0,
+      "INVALID": 0
+    },
+    "find_evidence": {
+      "provider_search": 3,
+      "cost_estimate": 0,
+      "travel_planning": 2,
+      "recovery_guidance": 1,
+      "risk_checklist": 1,
+      "find_evidence": 3,
+      "care_plan_multistep": 0,
+      "needs_clarification": 0,
+      "unsafe_medical": 0,
+      "out_of_scope": 0,
+      "general_navigation": 0,
+      "INVALID": 0
+    },
+    "care_plan_multistep": {
+      "provider_search": 9,
+      "cost_estimate": 0,
+      "travel_planning": 0,
+      "recovery_guidance": 0,
+      "risk_checklist": 1,
+      "find_evidence": 0,
+      "care_plan_multistep": 0,
+      "needs_clarification": 0,
+      "unsafe_medical": 0,
+      "out_of_scope": 0,
+      "general_navigation": 0,
+      "INVALID": 0
+    },
+    "needs_clarification": {
+      "provider_search": 1,
+      "cost_estimate": 0,
+      "travel_planning": 2,
+      "recovery_guidance": 3,
+      "risk_checklist": 0,
+      "find_evidence": 0,
+      "care_plan_multistep": 0,
+      "needs_clarification": 4,
+      "unsafe_medical": 0,
+      "out_of_scope": 0,
+      "general_navigation": 0,
+      "INVALID": 0
+    },
+    "unsafe_medical": {
+      "provider_search": 0,
+      "cost_estimate": 0,
+      "travel_planning": 2,
+      "recovery_guidance": 0,
+      "risk_checklist": 2,
+      "find_evidence": 0,
+      "care_plan_multistep": 0,
+      "needs_clarification": 0,
+      "unsafe_medical": 6,
+      "out_of_scope": 0,
+      "general_navigation": 0,
+      "INVALID": 0
+    },
+    "out_of_scope": {
+      "provider_search": 0,
+      "cost_estimate": 0,
+      "travel_planning": 0,
+      "recovery_guidance": 0,
+      "risk_checklist": 0,
+      "find_evidence": 0,
+      "care_plan_multistep": 0,
+      "needs_clarification": 0,
+      "unsafe_medical": 0,
+      "out_of_scope": 10,
+      "general_navigation": 0,
+      "INVALID": 0
+    },
+    "general_navigation": {
+      "provider_search": 0,
+      "cost_estimate": 3,
+      "travel_planning": 0,
+      "recovery_guidance": 0,
+      "risk_checklist": 0,
+      "find_evidence": 0,
+      "care_plan_multistep": 0,
+      "needs_clarification": 1,
+      "unsafe_medical": 0,
+      "out_of_scope": 6,
+      "general_navigation": 0,
+      "INVALID": 0
+    }
+  },
+  "confusion_matrix_labels": [
+    "provider_search",
+    "cost_estimate",
+    "travel_planning",
+    "recovery_guidance",
+    "risk_checklist",
+    "find_evidence",
+    "care_plan_multistep",
+    "needs_clarification",
+    "unsafe_medical",
+    "out_of_scope",
+    "general_navigation",
+    "INVALID"
+  ],
+  "invalid_output_count": 0,
+  "invalid_output_rate": 0.0,
+  "route_execution_score": 0.6090909090909091,
+  "critical_recalls": {
+    "unsafe_medical": 0.6,
+    "out_of_scope": 1.0,
+    "needs_clarification": 0.4,
+    "care_plan_multistep": 0.0
+  },
+  "metrics_backend": "standard_library",
+  "model_name": "existing_synataric_router",
+  "average_latency_seconds": 2.307701018181818,
+  "output_paths": {
+    "markdown_report": "C:\\Users\\ganes\\OneDrive\\Desktop\\GenAIProject\\synataric-healthcare-travel-rag\\reports\\finetune\\baseline_existing_router\\router_classification_report.md",
+    "json_report": "C:\\Users\\ganes\\OneDrive\\Desktop\\GenAIProject\\synataric-healthcare-travel-rag\\reports\\finetune\\baseline_existing_router\\router_classification_report.json",
+    "confusion_matrix_csv": "C:\\Users\\ganes\\OneDrive\\Desktop\\GenAIProject\\synataric-healthcare-travel-rag\\reports\\finetune\\baseline_existing_router\\router_confusion_matrix.csv",
+    "confusion_matrix_png": "C:\\Users\\ganes\\OneDrive\\Desktop\\GenAIProject\\synataric-healthcare-travel-rag\\reports\\finetune\\baseline_existing_router\\router_confusion_matrix.png"
+  }
+}

@@ -5,3 +5,41 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python / virtual envs
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Jupyter / Colab
+.ipynb_checkpoints/
+
+# Model artifacts / training outputs
+synataric-care-router-lora/
+synataric-care-router-lora-final/
+saves/
+merged_models/
+models/
+checkpoints/
+adapter_model.safetensors
+*.safetensors
+*.bin
+*.gguf
+*.pt
+*.pth
+*.ckpt
+
+# Training logs / caches
+wandb/
+runs/
+lightning_logs/
+.cache/
+huggingface/
