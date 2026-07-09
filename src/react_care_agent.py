@@ -25,7 +25,7 @@ from src.agent_tools import (
     run_travel_planning,
 )
 from src.config import configure_langsmith, load_settings, traceable
-from src.agent_intents import detect_procedure
+from src.agent_intents import detect_procedure, detect_unsafe_medical
 from src.output_sanitizer import sanitize_result_dict, sanitize_sources, sanitize_text
 
 
@@ -253,6 +253,31 @@ def detect_missing_procedure_for_react(question: str) -> bool:
     return any(term in text for term in planning_terms)
 
 
+def detect_react_safety_flags(question: str) -> list[str]:
+    text = " ".join(str(question or "").lower().split())
+    flags = list(detect_unsafe_medical(question))
+    medication_patterns = [
+        ("prescription_or_treatment_advice", "should i take antibiotics"),
+        ("prescription_or_treatment_advice", "can i take antibiotics"),
+        ("prescription_or_treatment_advice", "which antibiotics"),
+        ("prescription_or_treatment_advice", "what medication should i take"),
+        ("prescription_or_treatment_advice", "should i take medicine"),
+        ("prescription_or_treatment_advice", "painkiller dosage"),
+        ("prescription_or_treatment_advice", "painkillers should i take"),
+        ("prescription_or_treatment_advice", "blood thinner instructions"),
+        ("prescription_or_treatment_advice", "stop medication"),
+        ("prescription_or_treatment_advice", "start medication"),
+    ]
+    for flag, phrase in medication_patterns:
+        if phrase in text:
+            flags.append(flag)
+    if any(term in text for term in ["prescribe", "prescription", "dosage", " dose ", " dose of "]):
+        flags.append("prescription_or_treatment_advice")
+    if any(term in text for term in ["diagnosis", "diagnose"]):
+        flags.append("diagnosis")
+    return list(dict.fromkeys(flags))
+
+
 def _status_from_result(result_status: str) -> str:
     if result_status == "success":
         return "observing"
@@ -314,6 +339,23 @@ def _decision_to_state(state: ReactCareState, decision: ReactDecision) -> ReactC
 def reason_node(state: ReactCareState) -> ReactCareState:
     step_count = int(state.get("step_count", 0))
     max_steps = int(state.get("max_steps", 5))
+
+    if step_count == 0 and not state.get("tool_calls"):
+        safety_flags = detect_react_safety_flags(state.get("question", ""))
+        if safety_flags:
+            result = run_safety_response(state["question"], safety_flags)
+            updated: ReactCareState = {
+                **state,
+                "status": "unsafe",
+                "requires_human": False,
+                "human_question": None,
+                "final_answer": result.answer,
+                "selected_tool": "safety_response_tool",
+                "tool_input": None,
+                "warnings": [],
+                "errors": [],
+            }
+            return _append_log(updated, "Safety boundary triggered before ReAct planning.")
 
     if step_count == 0 and not state.get("tool_calls") and detect_missing_procedure_for_react(state.get("question", "")):
         human_question = "Which procedure are you considering?"
@@ -470,10 +512,11 @@ def final_node(state: ReactCareState) -> ReactCareState:
         if status not in {"error", "needs_human", "unsafe", "out_of_scope", "max_steps_reached"}:
             status = "complete"
 
+    final_text = sanitize_text(final_answer) if status == "unsafe" else _with_disclaimer(final_answer)
     updated = {
         **state,
         "status": status,
-        "final_answer": _with_disclaimer(final_answer),
+        "final_answer": final_text,
     }
     return _append_log(updated, "Final ReAct response prepared.")
 

@@ -110,6 +110,10 @@ def summarize_session_result(session_result: AgentSessionResult) -> str:
         lines.append(f"Human question: {human_question}")
     elif session_result.status == "unsafe":
         lines.append(f"Safety response: {result.get('answer')}")
+    elif session_result.status == "coverage_gap":
+        lines.append(f"Corpus coverage gap: {result.get('answer')}")
+    elif session_result.status == "out_of_scope":
+        lines.append(f"Out-of-scope response: {result.get('answer')}")
     elif session_result.status == "complete":
         lines.append(f"Answer: {result.get('answer')}")
     elif session_result.status == "error":
@@ -143,6 +147,10 @@ def _session_result_from_agent_result(
     status = str(result.get("status") or "error")
     if status == "unsafe":
         return AgentSessionResult(status="unsafe", result=result)
+    if status == "out_of_scope":
+        return AgentSessionResult(status="out_of_scope", result=result)
+    if status == "coverage_gap":
+        return AgentSessionResult(status="coverage_gap", result=result)
     if result.get("requires_human") or status == "needs_human":
         pending = PendingClarification(
             original_question=original_question,

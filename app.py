@@ -13,6 +13,7 @@ from src.graph import run_synataric_graph
 from src.loaders import load_documents
 from src.rag_chain import build_sources_referenced
 from src.sample_data import create_sample_corpus
+from src.demo_mode import render_demo_mode_page
 
 try:
     from src.agent_session import (
@@ -1641,7 +1642,7 @@ with st.sidebar:
         value=False,
         help="Reveal diagnostics, evaluation, and chunking comparison pages.",
     )
-    page_options = ["Ask Navigator", "Agent Navigator", "ReAct Care Planner", "Find Evidence"]
+    page_options = ["Ask Navigator", "Agent Navigator", "ReAct Care Planner", "Demo Mode", "Find Evidence"]
     if show_technical_tabs:
         page_options.extend(["RAG Diagnostics", "Evaluation Dashboard", "Chunk Strategy Comparison"])
     page = st.radio(
@@ -1673,6 +1674,8 @@ elif page == "Agent Navigator":
     render_agent_page(strategy, top_k)
 elif page == "ReAct Care Planner":
     render_react_care_planner_page(strategy, top_k)
+elif page == "Demo Mode":
+    render_demo_mode_page(strategy, top_k)
 elif page == "Find Evidence":
     render_find_evidence_page(strategy, top_k)
 elif page == "RAG Diagnostics":
