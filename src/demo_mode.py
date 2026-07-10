@@ -105,6 +105,31 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     border-radius: 16px !important;
     box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
 }
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.syn-care-goal-marker) {
+    background: #FFFFFF !important;
+    border-color: #E2E8F0 !important;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.syn-care-goal-marker) .syn-care-goal-title {
+    color: #075BA0;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 15px;
+    font-weight: 850;
+    letter-spacing: 0;
+    margin: 0 0 6px;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.syn-care-goal-marker) div[data-testid="stVerticalBlock"] {
+    gap: 0.65rem;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.syn-care-goal-marker) div[data-baseweb="select"] > div {
+    background: #EAF4FF !important;
+    border-color: #0B75BC !important;
+    border-radius: 12px !important;
+    color: #075BA0 !important;
+    min-height: 48px;
+    font-weight: 800;
+    padding-left: 14px;
+}
 div[data-testid="stTabs"] button {
     color: #475569 !important;
     font-weight: 700 !important;
@@ -908,13 +933,55 @@ def get_command_center_dashboard_data(metrics: dict[str, Any]) -> dict[str, Any]
             "Read-only tools",
         ],
         "pipeline_nodes": [
-            {"title": "Corpus", "subtitle": "Medical KB", "icon": "DB"},
-            {"title": "RAG Evidence", "subtitle": "Retrieval", "icon": "Q"},
-            {"title": "MINT Router", "subtitle": "Orchestration", "icon": "R"},
-            {"title": "Agent Tools", "subtitle": "4 bound tools", "icon": "T"},
-            {"title": "Bounded ReAct", "subtitle": "Reasoning loop", "icon": "A"},
-            {"title": "Grounded Plan", "subtitle": "Structured output", "icon": "P"},
-            {"title": "Safety / HITL", "subtitle": "Evals", "icon": "S"},
+            {
+                "title": "Corpus",
+                "subtitle": "Medical KB",
+                "chips": ["MD/TXT/PDF/CSV", "metadata", "0 LLM"],
+            },
+            {
+                "title": "RAG Evidence",
+                "subtitle": "Retrieval",
+                "display_subtitle": "Pinecone RAG",
+                "chips": [
+                    "text-embedding-3-small",
+                    "1536 dims",
+                    "fixed 700/120",
+                    "semantic 1200/180",
+                    "top_k",
+                    "FlashRank top_3",
+                ],
+            },
+            {
+                "title": "MINT Router",
+                "subtitle": "Orchestration",
+                "display_subtitle": "Lightest path",
+                "chips": ["RAG", "one tool", "ReAct", "safety first"],
+            },
+            {
+                "title": "Agent Tools",
+                "subtitle": "4 bound tools",
+                "display_subtitle": "Read-only",
+                "chips": ["provider", "cost", "recovery", "risk", "HITL"],
+            },
+            {
+                "title": "Bounded ReAct",
+                "subtitle": "Reasoning loop",
+                "display_subtitle": "Reason loop",
+                "chips": ["max_steps=5", "4 calls", "one tool/step"],
+            },
+            {
+                "title": "Grounded Plan",
+                "subtitle": "Structured output",
+                "display_subtitle": "Evidence answer",
+                "chips": ["GPT-4o-mini", "temp=0", "sources"],
+            },
+            {
+                "title": "Safety / HITL",
+                "display_title": "Safety / Evals",
+                "subtitle": "Evals",
+                "display_subtitle": "Trust layer",
+                "chips": ["LangSmith", "RAGAS", "40 cases", "0.8283→0.8810"],
+            },
         ],
         "kpis": [
             {
@@ -970,19 +1037,46 @@ def get_command_center_dashboard_data(metrics: dict[str, Any]) -> dict[str, Any]
     }
 
 
+def _pipeline_icon_svg(title: str) -> str:
+    paths = {
+        "Corpus": '<ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>',
+        "RAG Evidence": '<circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/>',
+        "MINT Router": '<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="18" cy="14" r="2"/><path d="M8 18h2a4 4 0 0 0 4-4V8a2 2 0 0 1 2-2"/><path d="M14 14h2"/>',
+        "Agent Tools": '<rect x="7" y="7" width="10" height="10" rx="1"/><rect x="10" y="10" width="4" height="4"/><path d="M9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4"/>',
+        "Bounded ReAct": '<path d="m12 3-8 4 8 4 8-4-8-4Z"/><path d="m4 12 8 4 8-4"/><path d="m4 17 8 4 8-4"/>',
+        "Grounded Plan": '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/><path d="m9 14 2 2 4-5"/>',
+        "Safety / HITL": '<path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/>',
+    }
+    path = paths.get(title, "")
+    return f'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">{path}</svg>'
+
+
+def _kpi_icon_svg(title: str) -> str:
+    paths = {
+        "Agent Eval": '<path d="M3 12h3l2-7 4 14 3-10 2 5h4"/>',
+        "Router": '<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="18" cy="14" r="2"/><path d="M8 18h2a4 4 0 0 0 4-4V8a2 2 0 0 1 2-2"/><path d="M14 14h2"/>',
+        "Latency": '<path d="m13 2-8 11h7l-1 9 8-11h-7l1-9Z"/>',
+        "Safety": '<path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/>',
+    }
+    path = paths.get(title, "")
+    return f'<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">{path}</svg>'
+
+
 def build_command_center_dashboard_html(data: dict[str, Any]) -> str:
     pipeline_nodes = data["pipeline_nodes"]
     pipeline_html = []
     for index, node in enumerate(pipeline_nodes):
         active_class = " is-active" if node["title"] == "MINT Router" else ""
         connector = '<div class="syn-pipe-connector"></div>' if index < len(pipeline_nodes) - 1 else ""
+        chips_html = "".join(f'<span class="syn-node-chip">{_escape(chip)}</span>' for chip in node["chips"])
         pipeline_html.append(
             f"""
             <div class="syn-pipe-node{active_class}">
-              <div class="syn-node-icon">{_escape(node['icon'])}</div>
+              <div class="syn-node-icon">{_pipeline_icon_svg(node['title'])}</div>
               <div>
-                <div class="syn-node-title">{_escape(node['title'])}</div>
-                <div class="syn-node-subtitle">{_escape(node['subtitle'])}</div>
+                <div class="syn-node-title">{_escape(node.get('display_title', node['title']))}</div>
+                <div class="syn-node-subtitle">{_escape(node.get('display_subtitle', node['subtitle']))}</div>
+                <div class="syn-node-chips">{chips_html}</div>
               </div>
             </div>
             {connector}
@@ -1004,7 +1098,7 @@ def build_command_center_dashboard_html(data: dict[str, Any]) -> str:
                   <div class="syn-kpi-title">{_escape(kpi['title'])}</div>
                   <div class="syn-kpi-label">{_escape(kpi['label'])}</div>
                 </div>
-                <div class="syn-kpi-icon"></div>
+                <div class="syn-kpi-icon">{_kpi_icon_svg(kpi['title'])}</div>
               </div>
               <div class="syn-kpi-value">{_escape(kpi['value'])} {previous_html}</div>
               <div class="syn-progress"><span></span></div>
@@ -1022,20 +1116,6 @@ def build_command_center_dashboard_html(data: dict[str, Any]) -> str:
             <div class="syn-scenario{active_class}">
               <span>{_escape(item['index'])}</span>
               <strong>{_escape(item['label'])}</strong>
-            </div>
-            """
-        )
-
-    timeline_html = []
-    for step in data["workflow_preview"]:
-        timeline_html.append(
-            f"""
-            <div class="syn-step">
-              <div class="syn-step-icon">{_escape(step['icon'])}</div>
-              <div>
-                <div class="syn-step-title">{_escape(step['title'])}</div>
-                <div class="syn-step-tool">{_escape(step['tool'])}</div>
-              </div>
             </div>
             """
         )
@@ -1111,17 +1191,18 @@ body {{
   margin-top: 18px;
   display: grid;
   grid-template-columns: repeat(7, minmax(128px, 1fr));
-  align-items: center;
+  align-items: stretch;
   gap: 10px;
 }}
 .syn-pipe-node {{
   min-height: 70px;
+  height: 100%;
   border: 1px solid #D7E3F0;
   border-radius: 12px;
-  padding: 14px 14px;
+  padding: 12px 10px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   background: linear-gradient(180deg, #F8FBFF, #F2F7FC);
 }}
 .syn-pipe-node.is-active {{
@@ -1141,8 +1222,9 @@ body {{
   font-size: 12px;
   font-weight: 900;
 }}
+.syn-node-icon svg {{ width: 16px; height: 16px; }}
 .is-active .syn-node-icon {{ background: rgba(255,255,255,0.2); color: #FFFFFF; }}
-.syn-node-title {{ font-size: 15px; font-weight: 850; white-space: nowrap; }}
+.syn-node-title {{ font-size: 14px; font-weight: 850; white-space: nowrap; }}
 .syn-node-subtitle {{
   color: #7890AE;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -1150,6 +1232,24 @@ body {{
   margin-top: 3px;
 }}
 .is-active .syn-node-subtitle {{ color: #C8E7FF; }}
+.syn-node-chips {{ display: flex; flex-wrap: wrap; gap: 3px; margin-top: 7px; }}
+.syn-node-chip {{
+  border: 1px solid #D7E3F0;
+  border-radius: 999px;
+  padding: 2px 5px;
+  color: #526B89;
+  background: #FFFFFF;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8px;
+  font-weight: 750;
+  line-height: 1.2;
+  white-space: nowrap;
+}}
+.is-active .syn-node-chip {{
+  color: #FFFFFF;
+  background: rgba(255,255,255,0.14);
+  border-color: rgba(255,255,255,0.35);
+}}
 .syn-pipe-connector {{ display: none; }}
 .syn-kpi-grid {{
   display: grid;
@@ -1161,9 +1261,9 @@ body {{
   background: #FFFFFF;
   border: 1px solid #E2E8F0;
   border-radius: 18px;
-  padding: 20px 22px;
+  padding: 12px 22px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-  min-height: 166px;
+  min-height: 138px;
 }}
 .syn-kpi-top {{ display: flex; justify-content: space-between; gap: 10px; }}
 .syn-kpi-title {{ font-size: 17px; font-weight: 850; }}
@@ -1174,20 +1274,24 @@ body {{
   margin-top: 5px;
 }}
 .syn-kpi-icon {{ width: 40px; height: 40px; border-radius: 10px; background: #EEF7FF; }}
-.syn-kpi-value {{ margin-top: 18px; color: #0B75BC; font-size: 32px; font-weight: 900; }}
+.syn-kpi-icon {{ display: grid; place-items: center; }}
+.syn-kpi-icon svg {{ width: 19px; height: 19px; }}
+.syn-accent-blue .syn-kpi-icon {{ color: #0B75BC; }}
+.syn-accent-teal .syn-kpi-icon {{ color: #0891B2; background: #ECFEFF; }}
+.syn-accent-green .syn-kpi-icon {{ color: #059669; background: #ECFDF5; }}
+.syn-accent-slate .syn-kpi-icon {{ color: #64748B; }}
+.syn-kpi-value {{ margin-top: 8px; color: #0B75BC; font-size: 32px; font-weight: 900; }}
 .syn-previous {{ color: #B6C5D8; font-size: 14px; text-decoration: line-through; margin-left: 8px; }}
-.syn-progress {{ margin-top: 10px; height: 5px; border-radius: 999px; background: #E8EEF6; overflow: hidden; }}
+.syn-progress {{ margin-top: 5px; height: 5px; border-radius: 999px; background: #E8EEF6; overflow: hidden; }}
 .syn-progress span {{ display: block; width: 84%; height: 100%; border-radius: inherit; background: #14B8A6; }}
-.syn-improvement {{ margin-top: 10px; color: #059669; font-weight: 850; font-size: 14px; }}
-.syn-kpi-subtext {{ margin-top: 11px; color: #7890AE; font-weight: 800; }}
+.syn-improvement {{ margin-top: 4px; color: #059669; font-weight: 850; font-size: 14px; }}
+.syn-kpi-subtext {{ margin-top: 4px; color: #7890AE; font-weight: 800; }}
 .syn-accent-green .syn-kpi-value {{ color: #059669; }}
 .syn-accent-slate .syn-kpi-value {{ color: #64748B; }}
 .syn-workspace {{
-  display: grid;
-  grid-template-columns: 1.45fr 0.8fr;
-  gap: 18px;
+  display: block;
 }}
-.syn-console, .syn-timeline {{ padding: 28px; }}
+.syn-console {{ padding: 28px; }}
 .syn-scenario-list {{ margin-top: 18px; display: grid; gap: 8px; }}
 .syn-scenario {{
   display: flex;
@@ -1233,29 +1337,8 @@ body {{
   font-weight: 850;
   box-shadow: 0 12px 22px rgba(11, 117, 188, 0.24);
 }}
-.syn-step-list {{ margin-top: 18px; display: grid; gap: 14px; }}
-.syn-step {{ display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: center; }}
-.syn-step-icon {{
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  border: 1px solid #D5E2F0;
-  background: #EEF7FF;
-  color: #7E9DBF;
-  font-weight: 900;
-}}
-.syn-step-title {{ color: #9AAFD0; font-size: 17px; font-weight: 850; }}
-.syn-step-tool {{
-  margin-top: 3px;
-  color: #9AAFD0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 13px;
-  font-weight: 700;
-}}
 @media (max-width: 1050px) {{
-  .syn-header, .syn-workspace {{ grid-template-columns: 1fr; }}
+  .syn-header {{ grid-template-columns: 1fr; }}
   .syn-badges {{ justify-content: flex-start; }}
   .syn-kpi-grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
   .syn-pipe-row {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
@@ -1280,18 +1363,6 @@ body {{
 
     <section class="syn-kpi-grid">{''.join(kpi_html)}</section>
 
-    <section class="syn-workspace">
-      <div class="syn-panel syn-console">
-        <div class="syn-section-title">NAVIGATOR CONSOLE</div>
-        <div class="syn-scenario-list">{''.join(scenario_html)}</div>
-        <div class="syn-query">{_escape(data['query_preview'])}</div>
-        <div class="syn-run">▶ Run Navigator</div>
-      </div>
-      <div class="syn-panel syn-timeline">
-        <div class="syn-section-title">WORKFLOW TIMELINE</div>
-        <div class="syn-step-list">{''.join(timeline_html)}</div>
-      </div>
-    </section>
   </div>
 </body>
 </html>
@@ -1301,7 +1372,7 @@ body {{
 def render_command_center_dashboard(metrics: dict[str, Any]) -> None:
     st.components.v1.html(
         build_command_center_dashboard_html(get_command_center_dashboard_data(metrics)),
-        height=760,
+        height=550,
         scrolling=False,
     )
 
@@ -2518,24 +2589,30 @@ def inject_demo_medical_css() -> None:
         .workflow-panel {
             background: #ffffff;
             border: 1px solid #dbeafe;
-            border-radius: 20px;
-            padding: 18px;
-            box-shadow: 0 14px 34px rgba(14, 116, 144, 0.08);
-            margin: 14px 0;
+            border-radius: 16px;
+            padding: 14px 16px;
+            box-shadow: 0 10px 24px rgba(14, 116, 144, 0.08);
+            margin: 12px 0 16px;
         }
         .workflow-panel h3 {
             color: #0f172a !important;
             margin: 0 0 12px;
+            font-size: 1.05rem;
+        }
+        .workflow-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+            gap: 8px;
         }
         .workflow-step {
             display: grid;
-            grid-template-columns: 34px 1fr;
-            gap: 12px;
+            grid-template-columns: 28px 1fr;
+            gap: 8px;
             align-items: start;
             border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 12px;
-            margin: 9px 0;
+            border-radius: 12px;
+            padding: 10px;
+            margin: 0;
             background: #ffffff;
         }
         .workflow-step-running {
@@ -2556,8 +2633,8 @@ def inject_demo_medical_css() -> None:
             background: #fef2f2;
         }
         .workflow-step-icon {
-            width: 30px;
-            height: 30px;
+            width: 26px;
+            height: 26px;
             border-radius: 50%;
             display: inline-flex;
             align-items: center;
@@ -2565,7 +2642,7 @@ def inject_demo_medical_css() -> None:
             background: #e2e8f0;
             color: #334155;
             font-weight: 900;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
         }
         .workflow-step-running .workflow-step-icon {
             background: #0e7490;
@@ -2587,11 +2664,13 @@ def inject_demo_medical_css() -> None:
             color: #0f172a;
             font-weight: 850;
             line-height: 1.25;
+            font-size: 0.92rem;
         }
         .workflow-step-detail {
             color: #475569;
             margin-top: 3px;
-            font-size: 0.9rem;
+            font-size: 0.78rem;
+            line-height: 1.25;
         }
         .coverage-grid {
             display: grid;
@@ -3137,12 +3216,44 @@ def render_command_center_run_output() -> None:
             st.info("No evidence needed for this route.")
 
 
+def render_workflow_timeline(steps: list[dict[str, Any]], label: str = "Navigator Trace") -> None:
+    if not steps:
+        return
+    label = "Navigator Trace" if str(label or "").lower() in {"workflow timeline", "planned workflow", "actual workflow"} else label
+    with st.container(border=True):
+        st.markdown(f"#### {sanitize_demo_text(label)}")
+        for start in range(0, len(steps), 4):
+            columns = st.columns(min(4, len(steps) - start))
+            for offset, column in enumerate(columns):
+                step = steps[start + offset]
+                status = str(step.get("status") or "waiting").lower()
+                marker = str(start + offset + 1)
+                if status == "complete":
+                    marker = "✓"
+                elif status == "warning":
+                    marker = "!"
+                elif status == "error":
+                    marker = "x"
+                title = sanitize_demo_text(step.get("title"))
+                tool = sanitize_demo_text(step.get("tool"))
+                detail = sanitize_demo_text(step.get("detail"))
+                with column:
+                    with st.container(border=True):
+                        st.markdown(f"**{marker} {title}**")
+                        if tool:
+                            st.caption(tool)
+                        elif detail:
+                            st.caption(detail)
+
+
 def render_demo_console(strategy: str, top_k: int) -> None:
     left, right = st.columns([0.64, 0.36])
     with left:
         with st.container(border=True):
-            st.markdown("#### NAVIGATOR CONSOLE")
-            st.caption("CLINICAL SCENARIO")
+            st.markdown(
+                '<span class="syn-care-goal-marker"></span><div class="syn-care-goal-title">CARE GOAL</div>',
+                unsafe_allow_html=True,
+            )
             scenario_name = st.selectbox("Scenario", list(DEMO_SCENARIOS.keys()), label_visibility="collapsed")
             scenario = DEMO_SCENARIOS[scenario_name]
             st.caption(f"Expected workflow: {scenario['workflow']}")
@@ -3155,7 +3266,7 @@ def render_demo_console(strategy: str, top_k: int) -> None:
             question = st.text_area(
                 "Patient or caregiver question",
                 key=question_key,
-                height=135,
+                height=105,
                 label_visibility="collapsed",
             )
             run_clicked = st.button("▶ Run Navigator", type="primary", use_container_width=False)
@@ -3186,6 +3297,59 @@ def render_demo_console(strategy: str, top_k: int) -> None:
         } or _normalize_result(result).get("status") == "coverage_gap"
         st.session_state.demo_mode_question_ran = question
         st.rerun()
+
+    render_command_center_run_output()
+
+
+def render_demo_console(strategy: str, top_k: int) -> None:
+    with st.container(border=True):
+        st.markdown(
+            '<span class="syn-care-goal-marker"></span><div class="syn-care-goal-title">CARE GOAL</div>',
+            unsafe_allow_html=True,
+        )
+        scenario_name = st.selectbox("Scenario", list(DEMO_SCENARIOS.keys()), label_visibility="collapsed")
+        scenario = DEMO_SCENARIOS[scenario_name]
+        st.caption(f"Expected workflow: {scenario['workflow']}")
+        question_key = "demo_mode_question"
+        scenario_key = "demo_mode_scenario"
+        if st.session_state.get(scenario_key) != scenario_name:
+            st.session_state[scenario_key] = scenario_name
+            st.session_state[question_key] = scenario["question"]
+        st.caption("NAVIGATOR QUERY")
+        question = st.text_area(
+            "Patient or caregiver question",
+            key=question_key,
+            height=105,
+            label_visibility="collapsed",
+        )
+        run_clicked = st.button("▶ Run Navigator", type="primary", use_container_width=False)
+
+    if run_clicked:
+        planned_steps = build_planned_workflow_for_scenario(scenario_name)
+        st.session_state.demo_mode_workflow_steps = planned_steps
+        st.session_state.demo_mode_workflow_label = "Navigator Trace"
+        with st.status("Running Synataric Navigator...", expanded=False):
+            result, latency, error = _run_live_demo(question, scenario, strategy, top_k)
+        actual_steps = extract_actual_workflow(result)
+        st.session_state.demo_mode_workflow_steps = actual_steps or [{**step, "status": "complete"} for step in planned_steps]
+        st.session_state.demo_mode_workflow_label = "Navigator Trace"
+        st.session_state.demo_mode_result = result
+        st.session_state.demo_mode_latency = latency
+        st.session_state.demo_mode_error = error
+        st.session_state.demo_mode_expected_route = scenario["expected_route"]
+        st.session_state.demo_mode_no_evidence_message = scenario["expected_route"] in {
+            "unsafe_medical",
+            "needs_clarification",
+            "out_of_scope",
+        } or _normalize_result(result).get("status") == "coverage_gap"
+        st.session_state.demo_mode_question_ran = question
+        st.rerun()
+
+    if st.session_state.get("demo_mode_result") or st.session_state.get("demo_mode_error"):
+        render_workflow_timeline(
+            st.session_state.get("demo_mode_workflow_steps") or [],
+            st.session_state.get("demo_mode_workflow_label", "Navigator Trace"),
+        )
 
     render_command_center_run_output()
 

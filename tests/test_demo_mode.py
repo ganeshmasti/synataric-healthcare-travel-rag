@@ -211,14 +211,24 @@ def test_command_center_dashboard_html_is_single_sanitized_render_block():
     html = build_command_center_dashboard_html(get_command_center_dashboard_data(load_demo_metrics()))
 
     assert "ARCHITECTURE PIPELINE" in html
-    assert "NAVIGATOR CONSOLE" in html
-    assert "WORKFLOW TIMELINE" in html
+    assert "NAVIGATOR CONSOLE" not in html
+    assert "WORKFLOW TIMELINE" not in html
+    assert "syn-timeline" not in html
     assert "C:\\Users" not in html
     assert "OneDrive" not in html
     assert "Desktop" not in html
     assert "GenAIProject" not in html
     assert "<style>" in html
     assert "<div" in html
+
+
+def test_workflow_trace_uses_navigator_trace_label():
+    source = inspect.getsource(demo_mode.render_workflow_timeline)
+
+    assert "Navigator Trace" in source
+    assert "WORKFLOW TIMELINE" not in source
+    assert "unsafe_allow_html" not in source
+    assert "workflow-strip" not in source
 
 
 def test_command_center_component_summary_contains_required_backend_components():
