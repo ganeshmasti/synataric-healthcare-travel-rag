@@ -89,6 +89,89 @@ GEO_DISPLAY_NAMES = {
 }
 
 
+STYLE_BLOCK = """
+<style>
+[data-testid="stAppViewContainer"] {
+    background: #EEF4FB !important;
+}
+.main .block-container {
+    max-width: 1268px;
+    padding-top: 0.85rem;
+    padding-bottom: 1.2rem;
+}
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: #FFFFFF;
+    border-color: #E2E8F0 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+div[data-testid="stTabs"] button {
+    color: #475569 !important;
+    font-weight: 700 !important;
+}
+div[data-testid="stTabs"] button[aria-selected="true"] {
+    color: #0F766E !important;
+    background: #CCFBF1 !important;
+}
+div[data-testid="stMetric"] {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 16px !important;
+    padding: 0.75rem 0.8rem !important;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+}
+div[data-testid="stMetric"] label,
+div[data-testid="stMetric"] [data-testid="stMetricLabel"] {
+    color: #64748B !important;
+}
+div[data-testid="stMetric"] [data-testid="stMetricValue"] {
+    color: #0F172A !important;
+}
+.stButton > button {
+    background: linear-gradient(135deg, #0F766E, #0284C7) !important;
+    border: 0 !important;
+    border-radius: 12px !important;
+    min-height: 2.75rem;
+    font-weight: 800 !important;
+    box-shadow: 0 10px 20px rgba(15, 118, 110, 0.18);
+}
+.stTextArea textarea {
+    background: #FFFFFF !important;
+    color: #0F172A !important;
+    border: 1px solid #CBD5E1 !important;
+    border-radius: 12px !important;
+}
+.stTextArea label,
+.stSelectbox label {
+    color: #0F172A !important;
+}
+div[data-baseweb="select"] > div {
+    background-color: #FFFFFF !important;
+    border-color: #E2E8F0 !important;
+    color: #0F172A !important;
+}
+div[data-testid="stAlert"] {
+    background-color: #FFFFFF !important;
+    color: #0F172A !important;
+    border-color: #E2E8F0 !important;
+}
+h1, h2, h3, h4 {
+    color: #0F172A !important;
+}
+p, li, .stMarkdown, [data-testid="stCaptionContainer"] {
+    color: #475569 !important;
+}
+hr {
+    margin: 0.35rem 0;
+}
+textarea {
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+}
+</style>
+"""
+
+
 # Fallback values mirror the Week 4/Week 5 reports so the demo remains usable
 # when report artifacts are absent in a deployment bundle.
 DEFAULT_DEMO_METRICS = {
@@ -501,6 +584,905 @@ def build_pitch_script_items() -> list[str]:
     ]
 
 
+def build_executive_story_content() -> dict[str, Any]:
+    return {
+        "title": "Synataric Global",
+        "subtitle": "Revolutionizing Healthcare: AI-Powered Access, Anywhere, Anytime.",
+        "positioning": "Empowering every human with world-class, affordable medical care through autonomous AI.",
+        "badges": [],
+        "why_cards": [
+            {
+                "title": "Fragmented healthcare journeys",
+                "text": (
+                    "Patients manually research providers, prices, travel logistics, recovery, and risk across "
+                    "disconnected sources."
+                ),
+            },
+            {
+                "title": "Global treatment decisions need trust",
+                "text": "Users need grounded evidence, visible sources, and clear safety boundaries before acting.",
+            },
+            {
+                "title": "AI platforms are not enough",
+                "text": (
+                    "The hard part is implementation: route the request, retrieve evidence, call tools, manage "
+                    "handoff, and measure quality."
+                ),
+            },
+        ],
+        "why_caption": "Cost and access variation creates a navigation problem.",
+        "architecture_flow": [
+            "User goal",
+            "MINT Router",
+            "Ask Navigator / Agent Navigator / ReAct Care Planner",
+            "RAG + Domain Tools",
+            "Grounded care plan + evidence",
+            "Safety / Human handoff / Evaluation trace",
+        ],
+        "measured_improvement_text": (
+            "The demo is not only a happy path. It is backed by golden datasets, LangSmith traces, deterministic "
+            "code evaluators, source checks, trajectory checks, safety checks, and measured deltas."
+        ),
+        "recording_script": (
+            "Synataric is not a generic chatbot. It is a care-navigation workflow layer. Simple questions use "
+            "grounded RAG. Single-intent questions route to one tool. Multi-step care goals activate a bounded "
+            "ReAct planner. Unsafe medical requests are refused, missing information asks the human, and evals "
+            "prove the improvement."
+        ),
+        "production_path": {
+            "title": "Production path",
+            "today": "Today: read-only navigation tools over a curated Synataric corpus.",
+            "next": (
+                "Next: provider APIs, appointment request workflow, insurance verification, travel/lodging APIs, "
+                "document checklist, secure patient profile, FHIR/records connectors, and care coordinator handoff."
+            ),
+            "note": (
+                "Any write action - booking, payment, provider outreach, insurance submission, or message sending - "
+                "requires human approval."
+            ),
+        },
+    }
+
+
+def build_architecture_snapshot_cards() -> list[dict[str, str]]:
+    return [
+        {
+            "title": "Ask Navigator",
+            "label": "Grounded RAG",
+            "text": "Direct question -> Pinecone retrieval -> FlashRank reranking -> grounded answer with sources.",
+            "best_for": "What is the cost of cataract surgery in Bangalore?",
+        },
+        {
+            "title": "Agent Navigator",
+            "label": "Router-pattern agent",
+            "text": "Classifies intent, selects one domain tool, or routes to safety / human clarification / out-of-scope.",
+            "best_for": "Where can I find good cataract surgery in India?",
+        },
+        {
+            "title": "ReAct Care Planner",
+            "label": "Bounded agentic loop",
+            "text": "Goal -> reason -> act -> observe -> decide next step. Used only for multi-step care plans.",
+            "best_for": (
+                "Create a care travel plan for cataract surgery in Bangalore including providers, cost, recovery, "
+                "and risks."
+            ),
+        },
+        {
+            "title": "Trust & Safety Layer",
+            "label": "Boundaries",
+            "text": (
+                "No diagnosis, no prescription, no booking, no payment. Missing information asks human; unsafe "
+                "medical questions are refused."
+            ),
+            "best_for": "Should I take antibiotics after surgery?",
+        },
+    ]
+
+
+def build_agentic_callout() -> dict[str, Any]:
+    return {
+        "title": "This is the agentic part",
+        "body": (
+            "The ReAct Care Planner takes a goal, senses the intent, calls one tool at a time, observes each "
+            "result, and decides the next step. For the Bangalore cataract care-plan goal, it calls "
+            "provider_search_tool, cost_estimate_tool, recovery_guidance_tool, and risk_checklist_tool before "
+            "synthesizing the plan."
+        ),
+        "steps": [
+            "Goal",
+            "Sense intent",
+            "Act: provider_search_tool",
+            "Observe",
+            "Act: cost_estimate_tool",
+            "Observe",
+            "Act: recovery_guidance_tool",
+            "Observe",
+            "Act: risk_checklist_tool",
+            "Synthesize care plan",
+        ],
+        "note": "Bounded by max_steps=5 and read-only tools.",
+    }
+
+
+def build_executive_metric_cards(metrics: dict[str, Any]) -> list[dict[str, str]]:
+    existing = metrics["existing_router"]
+    fine = metrics["fine_tuned_router"]
+    agent = metrics["agent_eval"]
+    return [
+        {
+            "title": "Agent Eval",
+            "value": f"{agent['baseline_overall']:.4f} -> {agent['post_improvement_overall']:.4f}",
+            "caption": "40-case golden dataset; Router Agent + ReAct Care Planner",
+        },
+        {
+            "title": "Biggest Agent Gains",
+            "value": "+0.1500",
+            "caption": "status accuracy and task completion",
+        },
+        {
+            "title": "Source Hit Rate",
+            "value": "0.8250 -> 0.9500",
+            "caption": "better evidence retrieval/use in post-improvement run",
+        },
+        {
+            "title": "Fine-Tuned Router",
+            "value": f"{existing['accuracy']:.3f} -> {fine['accuracy']:.3f}",
+            "caption": "Week 5 local route classifier benchmark",
+        },
+        {
+            "title": "Routing Latency",
+            "value": f"{existing['average_latency_seconds']:.3f}s -> {fine['average_latency_seconds']:.3f}s",
+            "caption": "observed validation latency improvement",
+        },
+        {
+            "title": "Safety",
+            "value": "Bounded",
+            "caption": "unsafe medication/prescription requests route to safety response",
+        },
+    ]
+
+
+def get_architecture_pipeline_nodes() -> list[dict[str, str]]:
+    return [
+        {
+            "title": "Corpus",
+            "role": "procedure, provider, cost, recovery, risk, policy files",
+        },
+        {
+            "title": "RAG Evidence",
+            "role": "load, chunk, embed, retrieve, rerank",
+        },
+        {
+            "title": "MINT Router",
+            "role": "selects the lightest workflow that works",
+        },
+        {
+            "title": "Agent Tools",
+            "role": "provider, cost, recovery, risk, travel, evidence, safety, ask-human",
+        },
+        {
+            "title": "Bounded ReAct Planner",
+            "role": "goal -> reason -> act -> observe",
+        },
+        {
+            "title": "Grounded Care Plan",
+            "role": "synthesized from observations and evidence",
+        },
+        {
+            "title": "Safety / HITL / Evals",
+            "role": "refusal, clarification, tracing, golden dataset scoring",
+        },
+    ]
+
+
+def get_component_summary_rows() -> list[dict[str, str]]:
+    return [
+        {
+            "component": "sample_data",
+            "type": "Pure Python",
+            "llm_calls": "0",
+            "role": "Creates illustrative procedure, provider, cost, risk, recovery, and policy files.",
+        },
+        {
+            "component": "loaders",
+            "type": "LangChain + Python",
+            "llm_calls": "0",
+            "role": "Loads Markdown, TXT, PDF, and CSV into Document objects with metadata.",
+        },
+        {
+            "component": "chunking",
+            "type": "LangChain",
+            "llm_calls": "0 + embeddings for semantic",
+            "role": "Fixed and semantic-style chunks.",
+        },
+        {
+            "component": "indexing",
+            "type": "OpenAI + Pinecone",
+            "llm_calls": "embedding calls",
+            "role": "Indexes chunks into fixed and semantic namespaces.",
+        },
+        {
+            "component": "retrieval",
+            "type": "Pinecone vector search",
+            "llm_calls": "0 LLM",
+            "role": "Returns top-k docs with retrieval metadata.",
+        },
+        {
+            "component": "reranking",
+            "type": "FlashRank local model",
+            "llm_calls": "0 LLM",
+            "role": "Reranks query-document pairs with intent boosts.",
+        },
+        {
+            "component": "rag_chain",
+            "type": "ChatOpenAI",
+            "llm_calls": "1 generation call",
+            "role": "Builds grounded answer with sources and safety rules.",
+        },
+        {
+            "component": "agent_intents",
+            "type": "LLM structured output + deterministic fallback",
+            "llm_calls": "1 classification call",
+            "role": "Classifies intent, missing fields, safety, and out-of-scope.",
+        },
+        {
+            "component": "agent_tools",
+            "type": "Python wrappers around RAG",
+            "llm_calls": "tool-dependent",
+            "role": "Domain tools return structured AgentToolResult.",
+        },
+        {
+            "component": "agent_graph",
+            "type": "LangGraph StateGraph",
+            "llm_calls": "intent + tool calls",
+            "role": "Routes to safety, out-of-scope, ask-human, tools, fallback, final response.",
+        },
+        {
+            "component": "agent_session",
+            "type": "Pure Python",
+            "llm_calls": "0",
+            "role": "Stores pending clarification and reruns after user supplies missing information.",
+        },
+        {
+            "component": "react_care_agent",
+            "type": "LangGraph loop + ChatOpenAI",
+            "llm_calls": "variable",
+            "role": "Bounded reason-act-observe loop for multi-step care plans.",
+        },
+        {
+            "component": "app",
+            "type": "Streamlit UI",
+            "llm_calls": "depends on user action",
+            "role": "Displays RAG, router agent, ReAct planner, evidence, diagnostics, and evaluation.",
+        },
+    ]
+
+
+def get_metric_cards(metrics: dict[str, Any]) -> list[dict[str, str]]:
+    existing = metrics["existing_router"]
+    fine = metrics["fine_tuned_router"]
+    agent = metrics["agent_eval"]
+    return [
+        {
+            "title": "Agent Eval",
+            "value": f"{agent['post_improvement_overall']:.4f}",
+            "caption": f"F1 Score | was {agent['baseline_overall']:.4f}",
+            "delta": "+6.4%",
+            "icon": "~",
+        },
+        {
+            "title": "Router Accuracy",
+            "value": f"{fine['accuracy']:.3f}",
+            "caption": f"Exact match | was {existing['accuracy']:.3f}",
+            "delta": "+80.2%",
+            "icon": "->",
+        },
+        {
+            "title": "Avg Latency",
+            "value": f"{fine['average_latency_seconds']:.3f}s",
+            "caption": f"End-to-end | was {existing['average_latency_seconds']:.3f}s",
+            "delta": "-85.3%",
+            "icon": "bolt",
+        },
+        {
+            "title": "Safety Bound",
+            "value": "Active",
+            "caption": "HITL enforced | Read-only tools",
+            "delta": "",
+            "icon": "shield",
+        },
+    ]
+
+
+def get_command_center_dashboard_data(metrics: dict[str, Any]) -> dict[str, Any]:
+    existing = metrics["existing_router"]
+    fine = metrics["fine_tuned_router"]
+    agent = metrics["agent_eval"]
+    return {
+        "title": "Synataric Global Healthcare Navigator",
+        "subtitle": "Care-navigation workflow layer for cross-border treatment planning",
+        "badges": [
+            "Educational navigation only",
+            "MINT + ReAct",
+            "Evaluated",
+            "Read-only tools",
+        ],
+        "pipeline_nodes": [
+            {"title": "Corpus", "subtitle": "Medical KB", "icon": "DB"},
+            {"title": "RAG Evidence", "subtitle": "Retrieval", "icon": "Q"},
+            {"title": "MINT Router", "subtitle": "Orchestration", "icon": "R"},
+            {"title": "Agent Tools", "subtitle": "4 bound tools", "icon": "T"},
+            {"title": "Bounded ReAct", "subtitle": "Reasoning loop", "icon": "A"},
+            {"title": "Grounded Plan", "subtitle": "Structured output", "icon": "P"},
+            {"title": "Safety / HITL", "subtitle": "Evals", "icon": "S"},
+        ],
+        "kpis": [
+            {
+                "title": "Agent Eval",
+                "label": "F1 score",
+                "value": f"{agent['post_improvement_overall']:.4f}",
+                "previous": f"{agent['baseline_overall']:.4f}",
+                "improvement": "+6.4%",
+                "accent": "blue",
+            },
+            {
+                "title": "Router",
+                "label": "Exact match",
+                "value": f"{fine['accuracy']:.3f}",
+                "previous": f"{existing['accuracy']:.3f}",
+                "improvement": "+80.2%",
+                "accent": "teal",
+            },
+            {
+                "title": "Latency",
+                "label": "Avg end-to-end",
+                "value": f"{fine['average_latency_seconds']:.3f}s",
+                "previous": f"{existing['average_latency_seconds']:.3f}s",
+                "improvement": "-85.3%",
+                "accent": "green",
+            },
+            {
+                "title": "Safety",
+                "label": "HITL enforced",
+                "value": "Active",
+                "previous": "",
+                "improvement": "",
+                "subtext": "Read-only · HITL enforced",
+                "accent": "slate",
+            },
+        ],
+        "console_preview": [
+            {"index": "01", "label": "Cataract care plan — Bangalore", "active": True},
+            {"index": "02", "label": "Cost estimate — Bangalore", "active": False},
+            {"index": "03", "label": "Safety boundary — antibiotics", "active": False},
+            {"index": "04", "label": "Human clarification — missing procedure", "active": False},
+        ],
+        "query_preview": (
+            "Create a care travel plan for cataract surgery in Bangalore including providers, cost, "
+            "recovery, and risks."
+        ),
+        "workflow_preview": [
+            {"title": "Provider Search", "tool": "provider_search_tool", "icon": "Q"},
+            {"title": "Cost Estimate", "tool": "cost_estimate_tool", "icon": "$"},
+            {"title": "Recovery Guidance", "tool": "recovery_guidance_tool", "icon": "~"},
+            {"title": "Risk Checklist", "tool": "risk_checklist_tool", "icon": "+"},
+        ],
+    }
+
+
+def build_command_center_dashboard_html(data: dict[str, Any]) -> str:
+    pipeline_nodes = data["pipeline_nodes"]
+    pipeline_html = []
+    for index, node in enumerate(pipeline_nodes):
+        active_class = " is-active" if node["title"] == "MINT Router" else ""
+        connector = '<div class="syn-pipe-connector"></div>' if index < len(pipeline_nodes) - 1 else ""
+        pipeline_html.append(
+            f"""
+            <div class="syn-pipe-node{active_class}">
+              <div class="syn-node-icon">{_escape(node['icon'])}</div>
+              <div>
+                <div class="syn-node-title">{_escape(node['title'])}</div>
+                <div class="syn-node-subtitle">{_escape(node['subtitle'])}</div>
+              </div>
+            </div>
+            {connector}
+            """
+        )
+
+    kpi_html = []
+    for kpi in data["kpis"]:
+        previous = kpi.get("previous", "")
+        improvement = kpi.get("improvement", "")
+        previous_html = f'<span class="syn-previous">{_escape(previous)}</span>' if previous else ""
+        improvement_html = f'<div class="syn-improvement">{_escape(improvement)}</div>' if improvement else ""
+        subtext_html = f'<div class="syn-kpi-subtext">{_escape(kpi.get("subtext", ""))}</div>' if kpi.get("subtext") else ""
+        kpi_html.append(
+            f"""
+            <div class="syn-kpi-card syn-accent-{_escape(kpi['accent'])}">
+              <div class="syn-kpi-top">
+                <div>
+                  <div class="syn-kpi-title">{_escape(kpi['title'])}</div>
+                  <div class="syn-kpi-label">{_escape(kpi['label'])}</div>
+                </div>
+                <div class="syn-kpi-icon"></div>
+              </div>
+              <div class="syn-kpi-value">{_escape(kpi['value'])} {previous_html}</div>
+              <div class="syn-progress"><span></span></div>
+              {improvement_html}
+              {subtext_html}
+            </div>
+            """
+        )
+
+    scenario_html = []
+    for item in data["console_preview"]:
+        active_class = " is-selected" if item["active"] else ""
+        scenario_html.append(
+            f"""
+            <div class="syn-scenario{active_class}">
+              <span>{_escape(item['index'])}</span>
+              <strong>{_escape(item['label'])}</strong>
+            </div>
+            """
+        )
+
+    timeline_html = []
+    for step in data["workflow_preview"]:
+        timeline_html.append(
+            f"""
+            <div class="syn-step">
+              <div class="syn-step-icon">{_escape(step['icon'])}</div>
+              <div>
+                <div class="syn-step-title">{_escape(step['title'])}</div>
+                <div class="syn-step-tool">{_escape(step['tool'])}</div>
+              </div>
+            </div>
+            """
+        )
+
+    badges_html = "".join(f'<span class="syn-badge">{_escape(badge)}</span>' for badge in data["badges"])
+    return f"""
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+* {{ box-sizing: border-box; }}
+body {{
+  margin: 0;
+  background: #EEF4FB;
+  color: #0F172A;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}}
+.syn-dashboard {{
+  width: 100%;
+  padding: 6px 4px 18px;
+}}
+.syn-header {{
+  display: grid;
+  grid-template-columns: 56px minmax(280px, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+}}
+.syn-logo {{
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: white;
+  font-size: 28px;
+  background: linear-gradient(145deg, #0B75BC, #14B8A6);
+  box-shadow: 0 10px 24px rgba(11, 117, 188, 0.22);
+}}
+.syn-title {{ font-size: 22px; font-weight: 850; line-height: 1.1; }}
+.syn-subtitle {{ color: #64748B; font-size: 16px; margin-top: 4px; }}
+.syn-badges {{ display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; max-width: 520px; }}
+.syn-badge {{
+  border: 1px solid #CFE1F5;
+  background: rgba(255,255,255,0.78);
+  border-radius: 999px;
+  color: #334155;
+  padding: 6px 11px;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
+}}
+.syn-panel {{
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}}
+.syn-section-title {{
+  color: #7890AE;
+  font-size: 13px;
+  letter-spacing: 0.15em;
+  font-weight: 850;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}}
+.syn-pipeline {{
+  padding: 24px 28px 22px;
+  margin-bottom: 18px;
+  overflow: hidden;
+}}
+.syn-pipe-row {{
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(128px, 1fr));
+  align-items: center;
+  gap: 10px;
+}}
+.syn-pipe-node {{
+  min-height: 70px;
+  border: 1px solid #D7E3F0;
+  border-radius: 12px;
+  padding: 14px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(180deg, #F8FBFF, #F2F7FC);
+}}
+.syn-pipe-node.is-active {{
+  background: linear-gradient(135deg, #0B75BC, #0E8BCB);
+  border-color: #0B75BC;
+  color: #FFFFFF;
+  box-shadow: 0 14px 28px rgba(11, 117, 188, 0.24);
+}}
+.syn-node-icon {{
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: #0B75BC;
+  background: #EAF4FF;
+  font-size: 12px;
+  font-weight: 900;
+}}
+.is-active .syn-node-icon {{ background: rgba(255,255,255,0.2); color: #FFFFFF; }}
+.syn-node-title {{ font-size: 15px; font-weight: 850; white-space: nowrap; }}
+.syn-node-subtitle {{
+  color: #7890AE;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  margin-top: 3px;
+}}
+.is-active .syn-node-subtitle {{ color: #C8E7FF; }}
+.syn-pipe-connector {{ display: none; }}
+.syn-kpi-grid {{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}}
+.syn-kpi-card {{
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 18px;
+  padding: 20px 22px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  min-height: 166px;
+}}
+.syn-kpi-top {{ display: flex; justify-content: space-between; gap: 10px; }}
+.syn-kpi-title {{ font-size: 17px; font-weight: 850; }}
+.syn-kpi-label {{
+  color: #7890AE;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  margin-top: 5px;
+}}
+.syn-kpi-icon {{ width: 40px; height: 40px; border-radius: 10px; background: #EEF7FF; }}
+.syn-kpi-value {{ margin-top: 18px; color: #0B75BC; font-size: 32px; font-weight: 900; }}
+.syn-previous {{ color: #B6C5D8; font-size: 14px; text-decoration: line-through; margin-left: 8px; }}
+.syn-progress {{ margin-top: 10px; height: 5px; border-radius: 999px; background: #E8EEF6; overflow: hidden; }}
+.syn-progress span {{ display: block; width: 84%; height: 100%; border-radius: inherit; background: #14B8A6; }}
+.syn-improvement {{ margin-top: 10px; color: #059669; font-weight: 850; font-size: 14px; }}
+.syn-kpi-subtext {{ margin-top: 11px; color: #7890AE; font-weight: 800; }}
+.syn-accent-green .syn-kpi-value {{ color: #059669; }}
+.syn-accent-slate .syn-kpi-value {{ color: #64748B; }}
+.syn-workspace {{
+  display: grid;
+  grid-template-columns: 1.45fr 0.8fr;
+  gap: 18px;
+}}
+.syn-console, .syn-timeline {{ padding: 28px; }}
+.syn-scenario-list {{ margin-top: 18px; display: grid; gap: 8px; }}
+.syn-scenario {{
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid #E0E8F2;
+  border-radius: 12px;
+  background: #F8FBFF;
+  color: #0F172A;
+}}
+.syn-scenario.is-selected {{
+  background: #EAF4FF;
+  border-color: #0B75BC;
+  color: #075BA0;
+}}
+.syn-scenario span {{
+  min-width: 36px;
+  text-align: center;
+  border: 1px solid #C9DAED;
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 850;
+  font-size: 12px;
+}}
+.syn-query {{
+  margin-top: 18px;
+  border: 1px solid #DCE6F2;
+  background: #F8FBFF;
+  border-radius: 12px;
+  padding: 18px;
+  line-height: 1.55;
+  font-size: 17px;
+}}
+.syn-run {{
+  display: inline-block;
+  margin-top: 18px;
+  background: linear-gradient(135deg, #0B75BC, #1589CC);
+  color: #FFFFFF;
+  border-radius: 12px;
+  padding: 13px 20px;
+  font-weight: 850;
+  box-shadow: 0 12px 22px rgba(11, 117, 188, 0.24);
+}}
+.syn-step-list {{ margin-top: 18px; display: grid; gap: 14px; }}
+.syn-step {{ display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: center; }}
+.syn-step-icon {{
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #D5E2F0;
+  background: #EEF7FF;
+  color: #7E9DBF;
+  font-weight: 900;
+}}
+.syn-step-title {{ color: #9AAFD0; font-size: 17px; font-weight: 850; }}
+.syn-step-tool {{
+  margin-top: 3px;
+  color: #9AAFD0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  font-weight: 700;
+}}
+@media (max-width: 1050px) {{
+  .syn-header, .syn-workspace {{ grid-template-columns: 1fr; }}
+  .syn-badges {{ justify-content: flex-start; }}
+  .syn-kpi-grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+  .syn-pipe-row {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+}}
+</style>
+</head>
+<body>
+  <div class="syn-dashboard">
+    <div class="syn-header">
+      <div class="syn-logo">◎</div>
+      <div>
+        <div class="syn-title">{_escape(data['title'])}</div>
+        <div class="syn-subtitle">{_escape(data['subtitle'])}</div>
+      </div>
+      <div class="syn-badges">{badges_html}</div>
+    </div>
+
+    <section class="syn-panel syn-pipeline">
+      <div class="syn-section-title">ARCHITECTURE PIPELINE</div>
+      <div class="syn-pipe-row">{''.join(pipeline_html)}</div>
+    </section>
+
+    <section class="syn-kpi-grid">{''.join(kpi_html)}</section>
+
+    <section class="syn-workspace">
+      <div class="syn-panel syn-console">
+        <div class="syn-section-title">NAVIGATOR CONSOLE</div>
+        <div class="syn-scenario-list">{''.join(scenario_html)}</div>
+        <div class="syn-query">{_escape(data['query_preview'])}</div>
+        <div class="syn-run">▶ Run Navigator</div>
+      </div>
+      <div class="syn-panel syn-timeline">
+        <div class="syn-section-title">WORKFLOW TIMELINE</div>
+        <div class="syn-step-list">{''.join(timeline_html)}</div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
+"""
+
+
+def render_command_center_dashboard(metrics: dict[str, Any]) -> None:
+    st.components.v1.html(
+        build_command_center_dashboard_html(get_command_center_dashboard_data(metrics)),
+        height=760,
+        scrolling=False,
+    )
+
+
+def get_mint_ladder_cards() -> list[dict[str, str]]:
+    return [
+        {
+            "mode": "Simple",
+            "title": "Ask Navigator",
+            "label": "Grounded RAG",
+            "text": "Best for direct evidence questions.",
+        },
+        {
+            "mode": "Routed",
+            "title": "Agent Navigator",
+            "label": "One intent -> one tool",
+            "text": "Best for provider, cost, recovery, risk, safety, and clarification routing.",
+        },
+        {
+            "mode": "Agentic",
+            "title": "ReAct Care Planner",
+            "label": "Goal -> reason -> act -> observe",
+            "text": "Best for complete multi-step care plans.",
+        },
+        {
+            "mode": "Guarded",
+            "title": "Safety / Human Boundary",
+            "label": "Refuse unsafe; ask missing info",
+            "text": "Best for medication risk or underspecified requests.",
+        },
+    ]
+
+
+def get_demo_tool_flow() -> list[str]:
+    return [
+        "Goal",
+        "Sense intent",
+        "provider_search_tool",
+        "cost_estimate_tool",
+        "recovery_guidance_tool",
+        "risk_checklist_tool",
+        "Synthesize",
+    ]
+
+
+def get_eval_delta_rows() -> list[dict[str, str]]:
+    return [
+        {"metric": "intent_accuracy", "baseline": "0.6750", "post": "0.7250", "delta": "+0.0500"},
+        {"metric": "status_accuracy", "baseline": "0.6250", "post": "0.7750", "delta": "+0.1500"},
+        {"metric": "tool_selection_accuracy", "baseline": "0.6250", "post": "0.6750", "delta": "+0.0500"},
+        {"metric": "tool_sequence_accuracy", "baseline": "0.9750", "post": "0.9750", "delta": "0.0000"},
+        {"metric": "source_hit_rate", "baseline": "0.8250", "post": "0.9500", "delta": "+0.1250"},
+        {"metric": "human_handoff_accuracy", "baseline": "0.6750", "post": "0.8000", "delta": "+0.1250"},
+        {"metric": "safety_refusal_accuracy", "baseline": "0.9750", "post": "0.9750", "delta": "0.0000"},
+        {"metric": "out_of_scope_accuracy", "baseline": "0.9750", "post": "0.9750", "delta": "0.0000"},
+        {"metric": "task_completion_score", "baseline": "0.6250", "post": "0.7750", "delta": "+0.1500"},
+        {"metric": "trajectory_correctness", "baseline": "0.7750", "post": "0.8250", "delta": "+0.0500"},
+        {"metric": "local_path_leakage_absence", "baseline": "0.9750", "post": "1.0000", "delta": "+0.0250"},
+        {"metric": "overall_score", "baseline": "0.8283", "post": "0.8810", "delta": "+0.0527"},
+    ]
+
+
+def get_route_specific_result_cards(route_key: str) -> list[dict[str, Any]]:
+    route = str(route_key or "").lower()
+    if route in {"care_plan_multistep", "react_care_planner", "multi-step care plan"}:
+        return [
+            {"title": "Provider Options", "items": ["Sankara Eye Services", "Bangalore Eye Centre"]},
+            {
+                "title": "Estimated Cost",
+                "items": [
+                    "INR 45,000 - INR 150,000",
+                    "Factors: lens choice, diagnostics, surgeon fees, facility type",
+                ],
+            },
+            {
+                "title": "Recovery Guidance",
+                "items": [
+                    "follow-up visits",
+                    "eye/wound care instructions",
+                    "medication-list questions",
+                    "mobility or companion support",
+                ],
+            },
+            {
+                "title": "Risk and Red Flags",
+                "items": [
+                    "discuss individual risks with licensed clinician",
+                    "watch for urgent symptoms",
+                    "seek immediate care for severe or urgent symptoms",
+                ],
+            },
+            {
+                "title": "Questions to Ask a Clinician",
+                "items": [
+                    "Which lens option is appropriate for me?",
+                    "What follow-up schedule should I plan around?",
+                    "Which symptoms require urgent review?",
+                ],
+            },
+            {
+                "title": "Evidence Used",
+                "items": [
+                    "bangalore_eye_hospitals.csv",
+                    "india_procedure_costs.csv",
+                    "cataract_surgery_guide.md",
+                    "post_op_recovery_guidelines.md",
+                ],
+            },
+        ]
+    if route == "cost_estimate":
+        return [
+            {"title": "Cost Range", "items": ["INR 45,000 - INR 150,000"]},
+            {"title": "Cost Drivers", "items": ["lens choice", "diagnostics", "surgeon fee", "facility type"]},
+            {"title": "Evidence", "items": ["india_procedure_costs.csv"]},
+            {"title": "Related Providers", "items": ["Bangalore Eye Centre", "Sankara Eye Services"]},
+            {"title": "Questions to Ask a Clinician", "items": ["Which lens option changes cost?", "What follow-up costs should I plan for?"]},
+        ]
+    if route == "provider_search":
+        return [
+            {"title": "Provider Options", "items": ["Bangalore Eye Centre", "Sankara Eye Services"]},
+            {"title": "Navigation Features", "items": ["compare provider fit", "review follow-up logistics", "confirm accreditation and surgeon experience"]},
+            {"title": "Evidence", "items": ["bangalore_eye_hospitals.csv", "provider_profiles.md"]},
+            {"title": "Questions to Ask a Clinician", "items": ["Which provider is appropriate for my condition?", "What pre-op tests are required?"]},
+        ]
+    if route == "recovery_guidance":
+        return [
+            {"title": "Recovery Checklist", "items": ["eye/wound care instructions", "medication-list questions", "mobility/caregiver support"]},
+            {"title": "Follow-up Visits", "items": ["confirm follow-up schedule", "plan travel around post-op review"]},
+            {"title": "Red Flags", "items": ["severe pain", "sudden vision changes", "urgent symptoms need immediate care"]},
+            {"title": "Evidence", "items": ["post_op_recovery_guidelines.md", "cataract_surgery_guide.md"]},
+        ]
+    if route == "risk_checklist":
+        return [
+            {"title": "Red Flags / Urgent Symptoms", "items": ["severe pain", "sudden vision changes", "signs of infection"]},
+            {"title": "Safety Note", "items": ["discuss individual risks with a licensed clinician", "seek immediate care for severe or urgent symptoms"]},
+            {"title": "Evidence", "items": ["travel_medical_risk_checklist.md", "post_op_recovery_guidelines.md"]},
+        ]
+    if route in {"unsafe_medical", "unsafe", "safety_response_tool"}:
+        return [
+            {
+                "title": "Safety Boundary Triggered",
+                "items": [
+                    "Synataric cannot provide diagnosis, prescriptions, medication instructions, or urgent medical decisions.",
+                    "Please consult a licensed clinician.",
+                    "If symptoms are severe or urgent, seek immediate medical care.",
+                ],
+            }
+        ]
+    if route in {"needs_clarification", "needs_human", "ask_human_tool"}:
+        return [
+            {
+                "title": "Clarification Needed",
+                "items": [
+                    "Which procedure are you considering?",
+                    "Missing procedure blocks safe travel planning.",
+                ],
+            }
+        ]
+    if route in {"out_of_scope", "out_of_scope_response_tool"}:
+        return [
+            {
+                "title": "Outside Synataric Scope",
+                "items": [
+                    "Suggested supported topics: providers, costs, recovery, risks, travel planning.",
+                ],
+            }
+        ]
+    if route in {"coverage_gap", "coverage_gap_response_tool"}:
+        return [
+            {
+                "title": "Corpus Coverage Gap",
+                "items": [
+                    "Current corpus supports illustrative Bangalore/India care-navigation examples.",
+                    "Missing: requested destination-specific provider or cost evidence.",
+                    "Try queries about Bangalore providers, India costs, recovery, risks, or safety boundaries.",
+                ],
+            }
+        ]
+    return [{"title": "Grounded Result", "items": ["Synataric returned a bounded care-navigation response."]}]
+
+
 def build_care_plan_cards(fields: dict[str, Any], evidence: list[dict[str, Any]], sources: list[dict[str, Any]]) -> list[dict[str, Any]]:
     question = str(fields.get("user_question") or "").lower()
     expected_route = str(fields.get("expected_route") or "").lower()
@@ -906,6 +1888,27 @@ def rewrite_answer_for_coverage_gaps(answer_text: Any, gaps: dict[str, Any]) -> 
     return "\n".join(lines).strip()
 
 
+def build_coverage_safe_care_plan_cards(
+    fields: dict[str, Any],
+    evidence: list[dict[str, Any]],
+    sources: list[dict[str, Any]],
+    coverage_gaps: dict[str, Any],
+) -> list[dict[str, Any]]:
+    route_key = _route_key_for_result(fields)
+    cards = get_route_specific_result_cards(route_key)
+    if route_key == "care_plan_multistep":
+        safe_fields = dict(fields)
+        safe_fields["final_answer"] = rewrite_answer_for_coverage_gaps(fields.get("final_answer"), coverage_gaps)
+        cards = build_care_plan_cards(safe_fields, evidence, sources) or cards
+    if coverage_gaps.get("provider_coverage") == "missing":
+        cards = [card for card in cards if card.get("title") != "Provider Options"]
+        cards.insert(0, {"title": "Provider Options", "items": ["Not available in the current Synataric corpus."]})
+    if coverage_gaps.get("cost_coverage") == "missing":
+        cards = [card for card in cards if card.get("title") != "Estimated Cost"]
+        cards.insert(1 if cards else 0, {"title": "Estimated Cost", "items": ["Not available in the current Synataric corpus."]})
+    return cards
+
+
 def _normalize_result(result: Any) -> dict[str, Any]:
     result_dict = _as_dict(result)
     inner = result_dict.get("result")
@@ -1268,6 +2271,8 @@ def _escape(value: Any) -> str:
 
 
 def inject_demo_medical_css() -> None:
+    st.markdown(STYLE_BLOCK, unsafe_allow_html=True)
+    return
     st.markdown(
         """
         <style>
@@ -1673,6 +2678,72 @@ def render_medical_header() -> None:
     render_mint_hero()
 
 
+def render_executive_demo_story(metrics: dict[str, Any]) -> None:
+    story = build_executive_story_content()
+
+    with st.container(border=True):
+        top_left, top_right = st.columns([2.2, 1])
+        with top_left:
+            st.caption("Executive demo mode")
+            st.markdown(f"## {story['title']}")
+            st.write(story["subtitle"])
+            st.info(story["positioning"])
+        with top_right:
+            for badge in story["badges"]:
+                st.caption(badge)
+
+    st.markdown("### Why Synataric?")
+    why_columns = st.columns(3)
+    for column, card in zip(why_columns, story["why_cards"]):
+        with column:
+            with st.container(border=True):
+                st.markdown(f"#### {card['title']}")
+                st.write(card["text"])
+    st.caption(story["why_caption"])
+
+    st.markdown("### Architecture at a glance")
+    st.caption(" -> ".join(story["architecture_flow"]))
+    architecture_columns = st.columns(4)
+    for column, card in zip(architecture_columns, build_architecture_snapshot_cards()):
+        with column:
+            with st.container(border=True):
+                st.caption(card["label"])
+                st.markdown(f"#### {card['title']}")
+                st.write(card["text"])
+                st.caption(f"Best for: {card['best_for']}")
+
+    callout = build_agentic_callout()
+    with st.container(border=True):
+        st.markdown(f"### {callout['title']}")
+        st.write(callout["body"])
+        step_columns = st.columns(5)
+        for index, step in enumerate(callout["steps"]):
+            with step_columns[index % len(step_columns)]:
+                st.caption(step)
+        st.caption(callout["note"])
+
+    st.markdown("### Measured improvement")
+    st.caption(story["measured_improvement_text"])
+    metric_cards = build_executive_metric_cards(metrics)
+    for row_start in range(0, len(metric_cards), 3):
+        metric_columns = st.columns(3)
+        for column, card in zip(metric_columns, metric_cards[row_start : row_start + 3]):
+            with column:
+                with st.container(border=True):
+                    st.metric(card["title"], card["value"])
+                    st.caption(card["caption"])
+
+    with st.expander("What to say in 20 seconds", expanded=True):
+        st.write(story["recording_script"])
+
+    production = story["production_path"]
+    with st.container(border=True):
+        st.markdown(f"#### {production['title']}")
+        st.write(production["today"])
+        st.write(production["next"])
+        st.warning(production["note"])
+
+
 def render_mint_decision_ladder() -> None:
     st.markdown("### MINT Decision Ladder")
     st.caption("Use the minimum intelligence necessary: Simple -> Routed -> Agentic -> Guarded")
@@ -1843,6 +2914,361 @@ def render_pitch_script_panel() -> None:
         """,
         unsafe_allow_html=True,
     )
+
+
+def render_command_center_hero() -> None:
+    logo_col, title_col, badge_col = st.columns([0.06, 0.52, 0.42], vertical_alignment="center")
+    with logo_col:
+        st.markdown("## ◎")
+    with title_col:
+        st.markdown("### Synataric Global Healthcare Navigator")
+        st.caption("Care-navigation workflow layer for cross-border treatment planning")
+    with badge_col:
+        badges = st.columns(3)
+        for column, badge in zip(badges, ["Educational navigation only", "MINT + ReAct", "Evaluated"]):
+            with column:
+                with st.container(border=True):
+                    st.caption(badge)
+        _, read_only = st.columns([0.58, 0.42])
+        with read_only:
+            with st.container(border=True):
+                st.caption("Read-only tools")
+
+
+def render_architecture_pipeline() -> None:
+    with st.container(border=True):
+        st.markdown("#### ARCHITECTURE PIPELINE")
+        nodes = get_architecture_pipeline_nodes()
+        columns = st.columns(len(nodes))
+        icons = ["▣", "⌕", "⌁", "⚙", "◇", "▤", "▢"]
+        for index, (column, node) in enumerate(zip(columns, nodes)):
+            with column:
+                with st.container(border=True):
+                    st.markdown(f"**{icons[index]} {node['title']}**")
+                    st.caption(node["role"])
+        st.caption(
+            "Corpus -> RAG Evidence -> MINT Router -> Agent Tools -> "
+            "Bounded ReAct Planner -> Grounded Care Plan -> Safety / HITL / Evals"
+        )
+
+
+def render_metrics_strip(metrics: dict[str, Any]) -> None:
+    cards = get_metric_cards(metrics)
+    columns = st.columns(len(cards))
+    for column, card in zip(columns, cards):
+        with column:
+            with st.container(border=True):
+                header_cols = st.columns([0.76, 0.24], vertical_alignment="center")
+                with header_cols[0]:
+                    st.markdown(f"#### {card['title']}")
+                with header_cols[1]:
+                    st.caption(card.get("icon", ""))
+                st.metric(card["caption"].split("|")[0].strip(), card["value"])
+                st.caption(card["caption"])
+                if card.get("delta"):
+                    st.caption(f"↗ {card['delta']}")
+
+
+def render_mint_ladder() -> None:
+    st.markdown("### MINT Decision Ladder")
+    st.caption("Minimum intelligence necessary: Simple -> Routed -> Agentic -> Guarded")
+    columns = st.columns(4)
+    for column, card in zip(columns, get_mint_ladder_cards()):
+        with column:
+            with st.container(border=True):
+                st.caption(card["mode"])
+                st.markdown(f"#### {card['title']}")
+                st.markdown(f"**{card['label']}**")
+                st.write(card["text"])
+
+
+def render_react_reason_card(question: str) -> None:
+    panel = build_why_react_panel("Multi-step care plan", question)
+    with st.container(border=True):
+        st.markdown("#### Why ReAct here?")
+        st.write(panel["body"])
+        chips = st.columns(4)
+        for column, chip in zip(chips, panel["chips"] or ["Providers", "Cost", "Recovery", "Risks"]):
+            with column:
+                st.caption(chip)
+        st.caption(" -> ".join(get_demo_tool_flow()))
+
+
+def render_workflow_timeline(steps: list[dict[str, Any]], label: str = "Workflow timeline") -> None:
+    if not steps:
+        return
+    st.markdown("#### WORKFLOW TIMELINE")
+    for index, step in enumerate(steps, start=1):
+        status = str(step.get("status") or "waiting").lower()
+        marker = "✓" if status == "complete" else "○" if status in {"waiting", "running"} else "!"
+        with st.container(border=True):
+            st.markdown(f"**{marker} {sanitize_demo_text(step.get('title'))}**")
+            detail = sanitize_demo_text(step.get("detail"))
+            if detail:
+                st.caption(detail)
+            tool = sanitize_demo_text(step.get("tool"))
+            if tool:
+                st.caption(tool)
+
+
+def render_result_summary(result: Any) -> dict[str, Any] | None:
+    if not result:
+        return None
+    expected_route = st.session_state.get("demo_mode_expected_route", "N/A")
+    latency = st.session_state.get("demo_mode_latency", 0.0)
+    fields = extract_demo_result_fields(result, expected_route, latency)
+    if st.session_state.get("demo_mode_question_ran"):
+        fields["user_question"] = sanitize_demo_text(st.session_state.demo_mode_question_ran)
+    evidence = extract_evidence(result)
+    sources = extract_sources(result)
+    tool_calls = extract_tool_calls(result)
+
+    st.markdown("### Result summary")
+    columns = st.columns(6)
+    columns[0].metric("Status", fields["status"])
+    columns[1].metric("Workflow", fields["actual_route"])
+    columns[2].metric("Tool calls", fields["tool_call_count"])
+    columns[3].metric("Latency", fields["runtime_latency"])
+    columns[4].metric("Safety", fields["safety_status"])
+    columns[5].metric("Evidence", len(evidence or sources))
+    st.caption(f"Question: {fields['user_question']}")
+    return {"fields": fields, "evidence": evidence, "sources": sources, "tool_calls": tool_calls}
+
+
+def _route_key_for_result(fields: dict[str, Any]) -> str:
+    expected = str(fields.get("expected_route") or "").lower()
+    actual = str(fields.get("actual_route") or "").lower()
+    selected_tool = str(fields.get("selected_tool") or "").lower()
+    status = str(fields.get("status") or "").lower()
+    if expected == "needs_clarification" or status == "needs_human" or selected_tool == "ask_human_tool":
+        return "needs_clarification"
+    if expected == "unsafe_medical" or actual == "unsafe_medical" or selected_tool == "safety_response_tool":
+        return "unsafe_medical"
+    if expected == "out_of_scope" or actual == "out_of_scope" or selected_tool == "out_of_scope_response_tool":
+        return "out_of_scope"
+    if status == "coverage_gap" or selected_tool == "coverage_gap_response_tool":
+        return "coverage_gap"
+    if expected:
+        return expected
+    if selected_tool.endswith("_tool"):
+        return selected_tool.replace("_tool", "")
+    return actual or "care_plan_multistep"
+
+
+def render_actual_routing_decision(fields: dict[str, Any]) -> None:
+    route_key = _route_key_for_result(fields)
+    route_details = {
+        "care_plan_multistep": ("ReAct Care Planner", "request asked for providers + cost + recovery + risks"),
+        "cost_estimate": ("Agent Navigator", "cost_estimate_tool"),
+        "provider_search": ("Agent Navigator", "provider_search_tool"),
+        "recovery_guidance": ("Agent Navigator", "recovery_guidance_tool"),
+        "risk_checklist": ("Agent Navigator", "risk_checklist_tool"),
+        "unsafe_medical": ("Safety Boundary", "safety_response_tool"),
+        "needs_clarification": ("Human Clarification", "ask_human_tool"),
+        "out_of_scope": ("Scope Boundary", "out_of_scope_response_tool"),
+        "coverage_gap": ("Coverage Boundary", "coverage_gap_response_tool"),
+    }
+    workflow, reason = route_details.get(route_key, ("Agent Navigator", sanitize_demo_text(fields.get("selected_tool"))))
+    with st.container(border=True):
+        st.markdown("#### Actual routing decision")
+        st.write(f"Selected workflow: {workflow}")
+        st.caption(f"Why / tool: {reason}")
+
+
+def render_native_care_plan_cards(cards: list[dict[str, Any]]) -> None:
+    if not cards:
+        return
+    st.markdown("### Structured care plan")
+    columns = st.columns(2)
+    for index, card in enumerate(cards):
+        items = [sanitize_demo_text(item) for item in card.get("items", []) if sanitize_demo_text(item)]
+        with columns[index % 2]:
+            with st.container(border=True):
+                st.markdown(f"#### {sanitize_demo_text(card.get('title'))}")
+                for item in items:
+                    st.write(f"- {item}")
+
+
+def render_route_specific_result(result: Any, scenario_key: str, question: str) -> None:
+    expected_route = st.session_state.get("demo_mode_expected_route", scenario_key)
+    latency = st.session_state.get("demo_mode_latency", 0.0)
+    fields = extract_demo_result_fields(result, expected_route, latency)
+    fields["user_question"] = sanitize_demo_text(question or fields.get("user_question"))
+    render_actual_routing_decision(fields)
+    route_key = _route_key_for_result(fields)
+    cards = get_route_specific_result_cards(route_key)
+    render_native_care_plan_cards(cards)
+
+
+def render_command_center_care_plan(result_payload: dict[str, Any]) -> None:
+    fields = result_payload["fields"]
+    evidence = result_payload["evidence"]
+    sources = result_payload["sources"]
+    coverage_gaps = detect_coverage_gaps(fields["user_question"], evidence, sources, result=st.session_state.get("demo_mode_result"))
+    status = str(fields["status"])
+    actual_route = str(fields["actual_route"])
+    expected_route = str(fields["expected_route"])
+
+    coverage_note = coverage_note_for_gaps(coverage_gaps)
+    if coverage_note:
+        st.warning(coverage_note)
+    cards = build_coverage_safe_care_plan_cards(fields, evidence, sources, coverage_gaps)
+    render_native_care_plan_cards(cards)
+
+
+def render_command_center_run_output() -> None:
+    result = st.session_state.get("demo_mode_result")
+    if not result:
+        return
+    payload = render_result_summary(result)
+    if payload is None:
+        return
+    render_actual_routing_decision(payload["fields"])
+    render_command_center_care_plan(payload)
+    with st.expander("Evidence and technical trace", expanded=False):
+        if payload["tool_calls"]:
+            st.markdown("#### Tool calls")
+            st.dataframe(pd.DataFrame(payload["tool_calls"]), use_container_width=True, hide_index=True)
+        rows = payload["evidence"] or payload["sources"]
+        if rows:
+            st.markdown("#### Evidence")
+            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+        else:
+            st.info("No evidence needed for this route.")
+
+
+def render_demo_console(strategy: str, top_k: int) -> None:
+    left, right = st.columns([0.64, 0.36])
+    with left:
+        with st.container(border=True):
+            st.markdown("#### NAVIGATOR CONSOLE")
+            st.caption("CLINICAL SCENARIO")
+            scenario_name = st.selectbox("Scenario", list(DEMO_SCENARIOS.keys()), label_visibility="collapsed")
+            scenario = DEMO_SCENARIOS[scenario_name]
+            st.caption(f"Expected workflow: {scenario['workflow']}")
+            question_key = "demo_mode_question"
+            scenario_key = "demo_mode_scenario"
+            if st.session_state.get(scenario_key) != scenario_name:
+                st.session_state[scenario_key] = scenario_name
+                st.session_state[question_key] = scenario["question"]
+            st.caption("NAVIGATOR QUERY")
+            question = st.text_area(
+                "Patient or caregiver question",
+                key=question_key,
+                height=135,
+                label_visibility="collapsed",
+            )
+            run_clicked = st.button("▶ Run Navigator", type="primary", use_container_width=False)
+    with right:
+        with st.container(border=True):
+            current_steps = st.session_state.get("demo_mode_workflow_steps") or build_planned_workflow_for_scenario(
+                st.session_state.get("demo_mode_scenario", scenario_name)
+            )
+            render_workflow_timeline(current_steps, st.session_state.get("demo_mode_workflow_label", "Workflow timeline"))
+
+    if run_clicked:
+        planned_steps = build_planned_workflow_for_scenario(scenario_name)
+        st.session_state.demo_mode_workflow_steps = planned_steps
+        st.session_state.demo_mode_workflow_label = "Planned workflow"
+        with st.status("Running Synataric Navigator...", expanded=False):
+            result, latency, error = _run_live_demo(question, scenario, strategy, top_k)
+        actual_steps = extract_actual_workflow(result)
+        st.session_state.demo_mode_workflow_steps = actual_steps or [{**step, "status": "complete"} for step in planned_steps]
+        st.session_state.demo_mode_workflow_label = "Actual workflow"
+        st.session_state.demo_mode_result = result
+        st.session_state.demo_mode_latency = latency
+        st.session_state.demo_mode_error = error
+        st.session_state.demo_mode_expected_route = scenario["expected_route"]
+        st.session_state.demo_mode_no_evidence_message = scenario["expected_route"] in {
+            "unsafe_medical",
+            "needs_clarification",
+            "out_of_scope",
+        } or _normalize_result(result).get("status") == "coverage_gap"
+        st.session_state.demo_mode_question_ran = question
+        st.rerun()
+
+    render_command_center_run_output()
+
+
+def render_architecture_details_tab() -> None:
+    st.markdown("### Architecture Details")
+    st.dataframe(pd.DataFrame(get_component_summary_rows()), use_container_width=True, hide_index=True)
+    st.markdown("### Router node flow")
+    st.caption(
+        "Intent Classifier -> Boundary Router -> Safety / Out-of-scope / Ask Human / Tool Router -> "
+        "Tool Executor -> Fallback / Recovery -> Final Response"
+    )
+
+
+def render_evaluation_details_tab() -> None:
+    st.markdown("### Golden dataset")
+    columns = st.columns(4)
+    columns[0].metric("Dataset", "Synataric-Agent-Golden-Dataset-V1")
+    columns[1].metric("Size", "40 cases")
+    columns[2].metric("Mix", "20 / 12 / 6 / 2")
+    columns[3].metric("Modes", "28 router / 12 ReAct")
+    st.caption("Mix: 20 happy path, 12 edge, 6 known failure, 2 adversarial.")
+
+    st.markdown("### Judge method now")
+    for item in [
+        "deterministic code checks",
+        "trajectory checks",
+        "source checks",
+        "safety checks",
+        "out-of-scope checks",
+        "path leakage checks",
+        "LangSmith tracing",
+    ]:
+        st.write(f"- {item}")
+
+    st.markdown("### Honest LLM-as-Judge note")
+    st.info(
+        "LLM-as-Judge is designed as the next enterprise step, but it has not yet been run for the Week 4 "
+        "agent benchmark. Earlier RAGAS scoring is LLM-based for the RAG layer, not the agent benchmark."
+    )
+
+    st.markdown("### Baseline vs Post Improvement")
+    st.dataframe(pd.DataFrame(get_eval_delta_rows()), use_container_width=True, hide_index=True)
+
+
+def render_production_roadmap_tab() -> None:
+    st.markdown("### Production Roadmap")
+    with st.container(border=True):
+        st.markdown("#### Today")
+        st.write("Read-only navigation over a curated Synataric corpus.")
+        st.markdown("#### Next")
+        for item in [
+            "provider APIs",
+            "appointment request workflow",
+            "insurance verification",
+            "travel/lodging APIs",
+            "document checklist",
+            "secure patient profile",
+            "FHIR/records connectors",
+            "care coordinator handoff",
+        ]:
+            st.write(f"- {item}")
+        st.warning(
+            "Any write action - booking, payment, provider outreach, insurance submission, or message sending - "
+            "requires human approval."
+        )
+
+
+def render_presenter_notes_tab() -> None:
+    st.markdown("### Presenter Notes")
+    for item in [
+        "Not a chatbot; care-navigation workflow layer.",
+        "MINT: use the simplest architecture that works.",
+        "Ask Navigator = RAG.",
+        "Agent Navigator = one intent to one tool.",
+        "ReAct Care Planner = goal to reason-act-observe loop.",
+        "Safety = refuse medication/prescription/urgent medical decisions.",
+        "HITL = ask when procedure/destination/care topic is missing.",
+        "Evals = measured improvement, not vibes.",
+        "Fine-tuning = local route classifier benchmark improved 0.555 to 1.000.",
+        "Production = read-only now; write actions need human approval.",
+    ]:
+        st.write(f"- {item}")
 
 
 def _render_architecture_flow() -> None:
@@ -2049,23 +3475,7 @@ def render_cost_card(items: list[str]) -> None:
 
 
 def render_care_plan_cards(cards: list[dict[str, Any]]) -> None:
-    if not cards:
-        return
-    st.markdown('<div class="syn-demo-section-title">Grounded Care Plan</div>', unsafe_allow_html=True)
-    columns = st.columns(2)
-    for index, card in enumerate(cards):
-        items = [sanitize_demo_text(item) for item in card.get("items", []) if sanitize_demo_text(item)]
-        bullets = "".join(f"<li>{_escape(item)}</li>" for item in items)
-        with columns[index % 2]:
-            st.markdown(
-                f"""
-                <div class="syn-demo-card">
-                  <h3>{_escape(card.get("title"))}</h3>
-                  <ul>{bullets}</ul>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+    render_native_care_plan_cards(cards)
 
 
 def _coverage_label(value: str) -> str:
@@ -2421,13 +3831,17 @@ def _render_benchmark_panels(metrics: dict[str, Any]) -> None:
 def render_demo_mode_page(strategy: str, top_k: int) -> None:
     inject_demo_medical_css()
     metrics = load_demo_metrics()
-    render_medical_header()
-    render_mint_decision_ladder()
-    render_demo_metric_cards(metrics)
-    _render_scenario_runner(strategy, top_k)
-    _render_run_output()
-    render_pitch_script_panel()
-    with st.expander("Show benchmark and architecture details", expanded=False):
-        _render_metric_cards(metrics)
-        _render_architecture_flow()
-        _render_benchmark_panels(metrics)
+    live_tab, architecture_tab, evaluation_tab, roadmap_tab, notes_tab = st.tabs(
+        ["Live Demo", "Architecture Details", "Evaluation Details", "Production Roadmap", "Presenter Notes"]
+    )
+    with live_tab:
+        render_command_center_dashboard(metrics)
+        render_demo_console(strategy, top_k)
+    with architecture_tab:
+        render_architecture_details_tab()
+    with evaluation_tab:
+        render_evaluation_details_tab()
+    with roadmap_tab:
+        render_production_roadmap_tab()
+    with notes_tab:
+        render_presenter_notes_tab()

@@ -57,30 +57,30 @@ def inject_css() -> None:
         """
         <style>
         :root {
-            --bg: #05051f;
-            --card: #1d1247;
-            --section: #120a35;
-            --purple: #a855f7;
-            --cyan: #22d3ee;
-            --coral: #ff4f5e;
-            --green: #22c55e;
-            --white: #ffffff;
-            --text2: #d8d2ff;
-            --muted: #9f95d0;
-            --border: rgba(168, 85, 247, 0.34);
+            --bg: #F8FAFC;
+            --card: #FFFFFF;
+            --section: #FFFFFF;
+            --accent: #0F766E;
+            --cyan: #2563EB;
+            --coral: #0F766E;
+            --green: #16A34A;
+            --white: #0F172A;
+            --text2: #475569;
+            --muted: #64748B;
+            --border: #E2E8F0;
         }
 
         [data-testid="stAppViewContainer"] {
             background:
-                radial-gradient(circle at 14% 0%, rgba(168, 85, 247, 0.20), transparent 30%),
-                radial-gradient(circle at 90% 5%, rgba(34, 211, 238, 0.12), transparent 26%),
-                linear-gradient(145deg, #05051f, #09062a 45%, #18002f) !important;
+                radial-gradient(circle at 14% 0%, rgba(204, 251, 241, 0.55), transparent 30%),
+                radial-gradient(circle at 90% 5%, rgba(219, 234, 254, 0.55), transparent 26%),
+                linear-gradient(145deg, #F8FAFC, #F8FAFC 45%, #EEF6F8) !important;
         }
 
         [data-testid="stHeader"] { background: transparent; }
 
         [data-testid="stSidebar"] {
-            background: linear-gradient(180deg, rgba(18, 10, 53, 0.98), rgba(5, 5, 31, 0.98));
+            background: linear-gradient(180deg, #FFFFFF, #F8FAFC);
             border-right: 1px solid var(--border);
         }
 
@@ -96,15 +96,15 @@ def inject_css() -> None:
         p, li, span, label, div { color: var(--text2); }
 
         [data-testid="stVerticalBlockBorderWrapper"] {
-            background: rgba(18, 10, 53, 0.72) !important;
+            background: #FFFFFF !important;
             border: 1px solid var(--border) !important;
             border-radius: 14px !important;
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.26);
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
         }
 
         [data-testid="stMetric"] {
-            background: rgba(5, 5, 31, 0.34);
-            border: 1px solid rgba(168, 85, 247, 0.18);
+            background: #FFFFFF;
+            border: 1px solid var(--border);
             border-radius: 12px;
             padding: 0.72rem;
         }
@@ -121,25 +121,25 @@ def inject_css() -> None:
 
         .stButton > button {
             border-radius: 10px !important;
-            border: 1px solid rgba(255,255,255,0.08) !important;
-            background: linear-gradient(135deg, var(--coral), #ff806b) !important;
+            border: 1px solid rgba(15, 118, 110, 0.12) !important;
+            background: linear-gradient(135deg, var(--coral), #14B8A6) !important;
             color: white !important;
             font-weight: 800 !important;
-            box-shadow: 0 10px 24px rgba(255, 79, 94, 0.22);
+            box-shadow: 0 10px 24px rgba(15, 118, 110, 0.18);
         }
 
         .stTextArea textarea, .stTextInput input {
-            background: rgba(255,255,255,0.97) !important;
-            color: #111827 !important;
+            background: #FFFFFF !important;
+            color: #0F172A !important;
             border-radius: 10px !important;
-            border: 1px solid rgba(168, 85, 247, 0.34) !important;
+            border: 1px solid var(--border) !important;
         }
 
         [data-testid="stSidebar"] [data-baseweb="select"] > div,
         [data-testid="stSidebar"] [data-baseweb="select"] div {
-            background-color: rgba(18, 10, 53, 0.98) !important;
+            background-color: #FFFFFF !important;
             color: var(--text2) !important;
-            border-color: rgba(168, 85, 247, 0.42) !important;
+            border-color: var(--border) !important;
         }
 
         [data-testid="stSidebar"] [data-baseweb="select"] svg {
@@ -151,21 +151,21 @@ def inject_css() -> None:
         [data-baseweb="popover"] > div,
         [data-baseweb="menu"],
         [role="listbox"] {
-            background-color: #120a35 !important;
+            background-color: #FFFFFF !important;
             color: var(--text2) !important;
-            border: 1px solid rgba(168, 85, 247, 0.42) !important;
+            border: 1px solid var(--border) !important;
         }
 
         [data-baseweb="menu"] li,
         [role="option"] {
-            background-color: #120a35 !important;
+            background-color: #FFFFFF !important;
             color: var(--text2) !important;
         }
 
         [data-baseweb="menu"] li:hover,
         [role="option"]:hover,
         [aria-selected="true"] {
-            background-color: rgba(168, 85, 247, 0.24) !important;
+            background-color: #CCFBF1 !important;
             color: var(--white) !important;
         }
 
@@ -179,9 +179,9 @@ def inject_css() -> None:
         [data-testid="stTooltipContent"],
         [data-testid="stTooltipContent"] div,
         [data-testid="stTooltipContent"] p {
-            background-color: #120a35 !important;
+            background-color: #FFFFFF !important;
             color: var(--text2) !important;
-            border-color: rgba(168, 85, 247, 0.42) !important;
+            border-color: var(--border) !important;
         }
 
         [data-testid="stDataFrame"] {
@@ -191,7 +191,7 @@ def inject_css() -> None:
         }
 
         [data-testid="stExpander"] {
-            background: rgba(18, 10, 53, 0.54);
+            background: #FFFFFF;
             border: 1px solid var(--border);
             border-radius: 12px;
         }
@@ -205,10 +205,10 @@ def inject_css() -> None:
         }
 
         .syn-title-block, .syn-feature, .syn-stage-card {
-            background: linear-gradient(145deg, rgba(35,25,87,0.90), rgba(22,16,62,0.90));
+            background: linear-gradient(145deg, #FFFFFF, #F8FAFC);
             border: 1px solid var(--border);
             border-radius: 14px;
-            box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
         }
 
         .syn-title-block {
@@ -266,12 +266,12 @@ def inject_css() -> None:
             min-height: 126px;
         }
 
-        .syn-stage-card.pending { border-color: rgba(159,149,208,0.26); }
+        .syn-stage-card.pending { border-color: #E2E8F0; }
         .syn-stage-card.running {
             border-color: var(--cyan);
-            box-shadow: 0 0 26px rgba(34, 211, 238, 0.18);
+            box-shadow: 0 0 20px rgba(37, 99, 235, 0.14);
         }
-        .syn-stage-card.complete { border-color: rgba(34, 197, 94, 0.54); }
+        .syn-stage-card.complete { border-color: rgba(22, 163, 74, 0.54); }
 
         .syn-stage-top {
             display: flex;
@@ -286,7 +286,7 @@ def inject_css() -> None:
             display: grid;
             place-items: center;
             border-radius: 10px;
-            background: rgba(168, 85, 247, 0.22);
+            background: #CCFBF1;
             color: var(--white);
             font-weight: 900;
         }
@@ -296,12 +296,12 @@ def inject_css() -> None:
             padding: 4px 8px;
             font-size: 0.68rem;
             font-weight: 900;
-            background: rgba(159,149,208,0.16);
+            background: #DBEAFE;
             color: var(--text2);
         }
 
-        .syn-badge.running { background: rgba(34, 211, 238, 0.15); color: #aaf4ff; }
-        .syn-badge.complete { background: rgba(34, 197, 94, 0.16); color: #bbf7d0; }
+        .syn-badge.running { background: #DBEAFE; color: #2563EB; }
+        .syn-badge.complete { background: #DCFCE7; color: #16A34A; }
 
         .syn-stage-title {
             color: var(--white);
@@ -326,7 +326,7 @@ def inject_css() -> None:
         }
 
         .syn-section-label {
-            color: #ffb4bd;
+            color: #0F766E;
             font-size: 0.86rem;
             font-weight: 950;
             letter-spacing: 0.08em;

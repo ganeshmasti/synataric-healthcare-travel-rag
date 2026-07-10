@@ -3,7 +3,13 @@ import inspect
 
 import src.demo_mode as demo_mode
 from src.demo_mode import (
+    build_agentic_callout,
+    build_architecture_snapshot_cards,
     build_care_plan_cards,
+    build_coverage_safe_care_plan_cards,
+    build_command_center_dashboard_html,
+    build_executive_metric_cards,
+    build_executive_story_content,
     build_mint_decision_ladder,
     build_planned_workflow_for_scenario,
     build_pitch_script_items,
@@ -15,6 +21,14 @@ from src.demo_mode import (
     extract_actual_workflow,
     extract_evidence,
     extract_tool_calls,
+    get_architecture_pipeline_nodes,
+    get_command_center_dashboard_data,
+    get_component_summary_rows,
+    get_demo_tool_flow,
+    get_eval_delta_rows,
+    get_metric_cards,
+    get_mint_ladder_cards,
+    get_route_specific_result_cards,
     load_demo_metrics,
     normalize_requested_geography,
     parse_care_plan_sections,
@@ -61,6 +75,247 @@ def test_load_demo_metrics_reads_stored_reports():
     assert round(metrics["fine_tuned_router"]["average_latency_seconds"], 3) == 0.340
     assert round(metrics["agent_eval"]["baseline_overall"], 4) == 0.8283
     assert round(metrics["agent_eval"]["post_improvement_overall"], 4) == 0.8810
+
+
+def test_architecture_snapshot_card_data_includes_expected_workflows():
+    cards = build_architecture_snapshot_cards()
+
+    assert [card["title"] for card in cards] == [
+        "Ask Navigator",
+        "Agent Navigator",
+        "ReAct Care Planner",
+        "Trust & Safety Layer",
+    ]
+    assert cards[0]["label"] == "Grounded RAG"
+    assert cards[2]["label"] == "Bounded agentic loop"
+    assert "No diagnosis" in cards[3]["text"]
+
+
+def test_executive_metrics_banner_data_includes_required_values():
+    metrics = load_demo_metrics()
+    cards = build_executive_metric_cards(metrics)
+    text = " ".join(f"{card['title']} {card['value']} {card['caption']}" for card in cards)
+
+    assert "Agent Eval" in text
+    assert "0.8283 -> 0.8810" in text
+    assert "Fine-Tuned Router" in text
+    assert "0.555 -> 1.000" in text
+    assert "2.308s -> 0.340s" in text
+
+
+def test_agentic_callout_mentions_expected_react_tools():
+    callout = build_agentic_callout()
+    text = f"{callout['title']} {callout['body']} {' '.join(callout['steps'])} {callout['note']}"
+
+    assert "provider_search_tool" in text
+    assert "cost_estimate_tool" in text
+    assert "recovery_guidance_tool" in text
+    assert "risk_checklist_tool" in text
+    assert "max_steps=5" in text
+
+
+def test_executive_story_helpers_do_not_return_raw_visible_html_fragments():
+    story = build_executive_story_content()
+    cards = build_architecture_snapshot_cards()
+    callout = build_agentic_callout()
+    metric_cards = build_executive_metric_cards(load_demo_metrics())
+    text = " ".join(
+        [
+            str(story),
+            str(cards),
+            str(callout),
+            str(metric_cards),
+        ]
+    )
+
+    for fragment in ["<div", "<span", "class=", "syn-mint-step-card", "syn-demo-step"]:
+        assert fragment not in text
+
+
+def test_executive_story_uses_slide_hero_copy_without_command_center_label():
+    story = build_executive_story_content()
+
+    assert story["title"] == "Synataric Global"
+    assert story["subtitle"] == "Revolutionizing Healthcare: AI-Powered Access, Anywhere, Anytime."
+    assert story["positioning"] == (
+        "Empowering every human with world-class, affordable medical care through autonomous AI."
+    )
+    assert "Synataric Command Center" not in str(story)
+    assert not story["badges"]
+
+
+def test_sanitize_demo_text_removes_all_local_project_path_terms():
+    text = (
+        "source_path: C:\\Users\\ganes\\OneDrive\\Desktop\\GenAIProject\\"
+        "synataric-healthcare-travel-rag\\data\\raw\\costs\\india_procedure_costs.csv"
+    )
+
+    cleaned = sanitize_demo_text(text)
+
+    assert "C:\\Users" not in cleaned
+    assert "OneDrive" not in cleaned
+    assert "Desktop" not in cleaned
+    assert "GenAIProject" not in cleaned
+    assert "source_path" not in cleaned
+    assert "india_procedure_costs.csv" in cleaned
+
+
+def test_command_center_architecture_pipeline_contains_required_nodes():
+    nodes = get_architecture_pipeline_nodes()
+
+    assert [node["title"] for node in nodes] == [
+        "Corpus",
+        "RAG Evidence",
+        "MINT Router",
+        "Agent Tools",
+        "Bounded ReAct Planner",
+        "Grounded Care Plan",
+        "Safety / HITL / Evals",
+    ]
+
+
+def test_command_center_dashboard_data_contains_figma_pipeline_nodes():
+    data = get_command_center_dashboard_data(load_demo_metrics())
+
+    assert [node["title"] for node in data["pipeline_nodes"]] == [
+        "Corpus",
+        "RAG Evidence",
+        "MINT Router",
+        "Agent Tools",
+        "Bounded ReAct",
+        "Grounded Plan",
+        "Safety / HITL",
+    ]
+    assert [node["subtitle"] for node in data["pipeline_nodes"]] == [
+        "Medical KB",
+        "Retrieval",
+        "Orchestration",
+        "4 bound tools",
+        "Reasoning loop",
+        "Structured output",
+        "Evals",
+    ]
+
+
+def test_command_center_dashboard_data_contains_figma_kpis_and_workflow():
+    data = get_command_center_dashboard_data(load_demo_metrics())
+    text = str(data)
+
+    for value in ["0.8810", "0.8283", "1.000", "0.555", "0.340s", "2.308s"]:
+        assert value in text
+    for tool in ["provider_search_tool", "cost_estimate_tool", "recovery_guidance_tool", "risk_checklist_tool"]:
+        assert tool in text
+
+
+def test_command_center_dashboard_html_is_single_sanitized_render_block():
+    html = build_command_center_dashboard_html(get_command_center_dashboard_data(load_demo_metrics()))
+
+    assert "ARCHITECTURE PIPELINE" in html
+    assert "NAVIGATOR CONSOLE" in html
+    assert "WORKFLOW TIMELINE" in html
+    assert "C:\\Users" not in html
+    assert "OneDrive" not in html
+    assert "Desktop" not in html
+    assert "GenAIProject" not in html
+    assert "<style>" in html
+    assert "<div" in html
+
+
+def test_command_center_component_summary_contains_required_backend_components():
+    rows = get_component_summary_rows()
+    component_names = {row["component"] for row in rows}
+
+    for component in [
+        "retrieval",
+        "reranking",
+        "rag_chain",
+        "agent_intents",
+        "agent_tools",
+        "agent_graph",
+        "react_care_agent",
+    ]:
+        assert component in component_names
+
+
+def test_command_center_metric_cards_contain_required_numbers():
+    cards = get_metric_cards(load_demo_metrics())
+    text = " ".join(f"{card['title']} {card['value']} {card['caption']}" for card in cards)
+
+    assert len(cards) == 4
+    for value in ["0.8810", "0.8283", "1.000", "0.555", "2.308", "0.340"]:
+        assert value in text
+
+
+def test_command_center_mint_ladder_has_exactly_four_compact_cards():
+    cards = get_mint_ladder_cards()
+
+    assert len(cards) == 4
+    assert [card["title"] for card in cards] == [
+        "Ask Navigator",
+        "Agent Navigator",
+        "ReAct Care Planner",
+        "Safety / Human Boundary",
+    ]
+
+
+def test_command_center_demo_tool_flow_includes_all_react_tools():
+    flow = get_demo_tool_flow()
+
+    assert "provider_search_tool" in flow
+    assert "cost_estimate_tool" in flow
+    assert "recovery_guidance_tool" in flow
+    assert "risk_checklist_tool" in flow
+
+
+def test_command_center_eval_delta_rows_include_required_deltas():
+    rows = get_eval_delta_rows()
+    by_metric = {row["metric"]: row for row in rows}
+
+    assert by_metric["overall_score"]["baseline"] == "0.8283"
+    assert by_metric["overall_score"]["post"] == "0.8810"
+    assert by_metric["status_accuracy"]["baseline"] == "0.6250"
+    assert by_metric["status_accuracy"]["post"] == "0.7750"
+    assert by_metric["source_hit_rate"]["baseline"] == "0.8250"
+    assert by_metric["source_hit_rate"]["post"] == "0.9500"
+
+
+def test_route_specific_result_data_exists_for_all_demo_routes():
+    expected_titles = {
+        "care_plan_multistep": ["Provider Options", "Estimated Cost", "Recovery Guidance", "Risk and Red Flags"],
+        "cost_estimate": ["Cost Range", "Cost Drivers", "Evidence"],
+        "provider_search": ["Provider Options", "Navigation Features", "Evidence"],
+        "recovery_guidance": ["Recovery Checklist", "Follow-up Visits", "Red Flags"],
+        "risk_checklist": ["Red Flags / Urgent Symptoms", "Safety Note", "Evidence"],
+        "unsafe_medical": ["Safety Boundary Triggered"],
+        "needs_clarification": ["Clarification Needed"],
+        "out_of_scope": ["Outside Synataric Scope"],
+        "coverage_gap": ["Corpus Coverage Gap"],
+    }
+
+    for route_key, titles in expected_titles.items():
+        cards = get_route_specific_result_cards(route_key)
+        card_titles = [card["title"] for card in cards]
+        for title in titles:
+            assert title in card_titles
+
+
+def test_command_center_helper_display_text_has_no_raw_html_fragments():
+    helper_payloads = [
+        get_architecture_pipeline_nodes(),
+        get_component_summary_rows(),
+        get_metric_cards(load_demo_metrics()),
+        get_mint_ladder_cards(),
+        get_demo_tool_flow(),
+        get_eval_delta_rows(),
+        get_route_specific_result_cards("care_plan_multistep"),
+        get_route_specific_result_cards("cost_estimate"),
+        get_route_specific_result_cards("provider_search"),
+        get_route_specific_result_cards("unsafe_medical"),
+    ]
+    text = " ".join(str(payload) for payload in helper_payloads)
+
+    for fragment in ["<div", "</div>", "<span", "</span>", "class=", "syn-mint", "syn-demo-step", "workflow-step"]:
+        assert fragment not in text
 
 
 def test_extract_evidence_accepts_documents_and_sanitizes_sources():
@@ -665,3 +920,36 @@ Costs vary widely. Contact hospitals for pricing.
     assert "USA-specific" not in rewritten
     assert "check local clinics" not in rewritten
     assert "Costs vary widely" not in rewritten
+
+
+def test_coverage_safe_cards_suppress_unsupported_usa_placeholder_answer():
+    fields = {
+        "user_question": "Create a cataract surgery care travel plan in the USA with providers and costs.",
+        "expected_route": "care_plan_multistep",
+        "actual_route": "care_plan_multistep",
+        "status": "success",
+        "final_answer": (
+            "#### Providers: - Provider Name: [Insert Provider Name] - Location: [Insert City, State] "
+            "#### Cost Estimates: - Estimated Cost of Cataract Surgery: [InsertCostRange] "
+            "#### Recovery Guidance: - Arrange follow-up care. "
+            "#### Risks: - Seek urgent care for severe symptoms."
+        ),
+    }
+    gaps = {
+        "coverage": "Partial",
+        "provider_coverage": "missing",
+        "cost_coverage": "missing",
+        "recovery_coverage": "available",
+        "risk_coverage": "available",
+        "requested_geography": "USA",
+        "requested_geography_key": "usa",
+        "geography_supported": False,
+    }
+
+    cards = build_coverage_safe_care_plan_cards(fields, [], [], gaps)
+    rendered_text = " ".join(item for card in cards for item in card["items"])
+
+    assert "Not available in the current Synataric corpus" in rendered_text
+    assert "[Insert" not in rendered_text
+    assert "InsertCostRange" not in rendered_text
+    assert "Care Navigation Answer" not in [card["title"] for card in cards]
