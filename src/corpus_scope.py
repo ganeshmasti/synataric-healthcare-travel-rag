@@ -37,7 +37,15 @@ SUPPORTED_PROVIDER_COST_GEOS = {"bangalore", "india"}
 
 SUPPORTED_GEO_ALIASES = {
     "bangalore": ["bangalore", "bengaluru"],
-    "india": ["india"],
+    "india": [
+        "india", "south india", "north india", "andhra pradesh", "arunachal pradesh", "assam", "bihar",
+        "chhattisgarh", "goa", "gujarat", "haryana", "himachal pradesh", "jharkhand", "karnataka", "kerala",
+        "madhya pradesh", "maharashtra", "manipur", "meghalaya", "mizoram", "nagaland", "odisha", "orissa",
+        "punjab", "rajasthan", "sikkim", "tamil nadu", "telangana", "tripura", "uttar pradesh", "uttarakhand",
+        "west bengal", "delhi", "new delhi", "chandigarh", "puducherry", "pondicherry", "ladakh",
+        "jammu and kashmir", "andaman and nicobar", "lakshadweep", "mumbai", "chennai", "hyderabad",
+        "kolkata", "pune", "ahmedabad", "jaipur", "kochi", "cochin", "coimbatore", "lucknow", "surat",
+    ],
 }
 
 UNSUPPORTED_GEO_ALIASES = {

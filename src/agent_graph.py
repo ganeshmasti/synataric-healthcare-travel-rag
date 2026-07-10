@@ -32,6 +32,7 @@ from src.agent_tools import (
     run_travel_planning,
 )
 from src.config import configure_langsmith, load_settings, traceable
+from src.corpus_scope import build_coverage_gap_response, evaluate_corpus_scope
 from src.output_sanitizer import sanitize_text
 
 
@@ -439,6 +440,17 @@ def run_synataric_agent(
     top_k: int = 12,
     thread_id: str = "synataric-agent-demo",
 ) -> Dict[str, Any]:
+    corpus_scope = evaluate_corpus_scope(question)
+    if corpus_scope.status == "coverage_gap":
+        return {
+            **build_coverage_gap_response(corpus_scope),
+            "question": question,
+            "tool_calls": [],
+            "tool_results": [],
+            "errors": [],
+            "execution_log": ["Corpus coverage checked before agent tool execution."],
+        }
+
     configure_langsmith()
     settings = load_settings()
     graph = build_synataric_agent_graph()

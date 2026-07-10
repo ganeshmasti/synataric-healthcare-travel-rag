@@ -24,7 +24,15 @@ SUPPORTED_PROVIDER_COST_GEOS = {"bangalore", "india"}
 
 SUPPORTED_GEO_ALIASES = {
     "bangalore": ["bangalore", "bengaluru"],
-    "india": ["india"],
+    "india": [
+        "india", "south india", "north india", "andhra pradesh", "arunachal pradesh", "assam", "bihar",
+        "chhattisgarh", "goa", "gujarat", "haryana", "himachal pradesh", "jharkhand", "karnataka", "kerala",
+        "madhya pradesh", "maharashtra", "manipur", "meghalaya", "mizoram", "nagaland", "odisha", "orissa",
+        "punjab", "rajasthan", "sikkim", "tamil nadu", "telangana", "tripura", "uttar pradesh", "uttarakhand",
+        "west bengal", "delhi", "new delhi", "chandigarh", "puducherry", "pondicherry", "ladakh",
+        "jammu and kashmir", "andaman and nicobar", "lakshadweep", "mumbai", "chennai", "hyderabad",
+        "kolkata", "pune", "ahmedabad", "jaipur", "kochi", "cochin", "coimbatore", "lucknow", "surat",
+    ],
 }
 
 UNSUPPORTED_GEO_ALIASES = {
@@ -111,6 +119,8 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(.syn-care-goal-marker) {
     box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
 }
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.syn-care-goal-marker) .syn-care-goal-title {
+    display: flex;
+    align-items: center;
     color: #075BA0;
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 15px;
@@ -118,6 +128,7 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(.syn-care-goal-marker) .syn-
     letter-spacing: 0;
     margin: 0 0 6px;
 }
+.syn-care-week { display:inline-flex; align-items:center; margin-left:8px; padding:3px 7px; border:1px solid #D7B8FF; border-radius:7px; background:#F7F0FF; color:#7030DB; font:800 10px ui-monospace,SFMono-Regular,Menlo,monospace; line-height:1.2; letter-spacing:0; white-space:nowrap; }
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.syn-care-goal-marker) div[data-testid="stVerticalBlock"] {
     gap: 0.65rem;
 }
@@ -282,14 +293,10 @@ DEMO_SCENARIOS = {
     },
     "Unsupported geography / USA gap test": {
         "question": "Create a care travel plan for cataract surgery in the USA including providers, cost, recovery, and risks.",
-        "expected_route": "care_plan_multistep",
-        "workflow": "ReAct Care Planner",
-        "expected_tools": [
-            "provider_search_tool",
-            "cost_estimate_tool",
-            "recovery_guidance_tool",
-            "risk_checklist_tool",
-        ],
+        "expected_route": "coverage_gap",
+        "workflow": "Corpus Coverage Check",
+        "expected_tools": [],
+        "runner": "react",
     },
 }
 
@@ -398,6 +405,16 @@ def sanitize_demo_text(text: Any) -> str:
     return cleaned
 
 
+def sanitize_demo_multiline_text(text: Any) -> str:
+    if text is None:
+        return ""
+    return "\n".join(
+        cleaned
+        for line in str(text).splitlines()
+        if (cleaned := sanitize_demo_text(line))
+    )
+
+
 def _source_name(value: Any) -> str:
     cleaned = sanitize_demo_text(value)
     if not cleaned:
@@ -488,6 +505,13 @@ def _provider_from_line(line: str) -> dict[str, str]:
 
 def parse_care_plan_sections(answer_text: Any) -> dict[str, Any]:
     text = "" if answer_text is None else str(answer_text)
+    text = re.sub(r"\s+(?=#{1,6}\s+)", "\n", text)
+    text = re.sub(
+        r"^(#{1,6}\s+[^:\n]{2,80}:)\s*",
+        r"\1\n",
+        text,
+        flags=re.MULTILINE,
+    )
     sections: dict[str, list[str]] = {key: [] for key in SECTION_LABELS}
     providers: list[dict[str, str]] = []
     fallback: list[str] = []
@@ -800,7 +824,7 @@ def get_architecture_pipeline_nodes() -> list[dict[str, str]]:
     ]
 
 
-def get_component_summary_rows() -> list[dict[str, str]]:
+def _legacy_component_summary_rows() -> list[dict[str, str]]:
     return [
         {
             "component": "sample_data",
@@ -858,7 +882,7 @@ def get_component_summary_rows() -> list[dict[str, str]]:
         },
         {
             "component": "agent_graph",
-            "type": "LangGraph StateGraph",
+            "type": "LangGraph workflow",
             "llm_calls": "intent + tool calls",
             "role": "Routes to safety, out-of-scope, ask-human, tools, fallback, final response.",
         },
@@ -883,6 +907,31 @@ def get_component_summary_rows() -> list[dict[str, str]]:
     ]
 
 
+def get_component_summary_rows() -> list[dict[str, str]]:
+    return [
+        {"Component": "sample_data", "Type": "Pure Python", "Call Profile": "Deterministic", "Role": "Creates illustrative procedure, provider, cost, risk, recovery, and policy files."},
+        {"Component": "loaders", "Type": "LangChain + Python", "Call Profile": "Deterministic", "Role": "Loads Markdown, TXT, PDF, and CSV into Document objects with metadata."},
+        {"Component": "cleaning", "Type": "Pure Python", "Call Profile": "Deterministic", "Role": "Normalizes whitespace while preserving costs, providers, and medical terms."},
+        {"Component": "fixed_chunker", "Type": "LangChain TextSplitter", "Call Profile": "Deterministic", "Role": "RecursiveCharacterTextSplitter, chunk_size=700, overlap=120."},
+        {"Component": "semantic_chunker", "Type": "LangChain Experimental / fallback", "Call Profile": "Embedding-assisted when available", "Role": "SemanticChunker when available; otherwise fallback splitter, chunk_size=1200, overlap=180."},
+        {"Component": "embedder", "Type": "OpenAIEmbeddings", "Call Profile": "Embedding API", "Role": "text-embedding-3-small, 1536-dimensional vectors."},
+        {"Component": "vector_store", "Type": "Pinecone", "Call Profile": "Vector DB", "Role": "Serverless Pinecone index, cosine metric, synataric-fixed and synataric-semantic namespaces."},
+        {"Component": "retriever", "Type": "Pinecone similarity search", "Call Profile": "Vector search", "Role": "similarity_search_with_score(question, k=top_k), preserves retrieval_score metadata."},
+        {"Component": "reranker", "Type": "FlashRank local model", "Call Profile": "Local rerank", "Role": "ms-marco-MiniLM-L-12-v2, keeps top_n=3, provider-intent boost."},
+        {"Component": "rag_chain", "Type": "ChatOpenAI", "Call Profile": "Answer generation", "Role": "GPT-4o-mini, temperature=0, grounded answer with sources and Evidence Used."},
+        {"Component": "graph", "Type": "LangGraph workflow", "Call Profile": "RAG orchestration", "Role": "retrieve_node → rerank_node → generate_node."},
+        {"Component": "evidence_locator", "Type": "Retriever + reranker", "Call Profile": "Evidence lookup", "Role": "Finds source file, snippet, parent context, retrieval_score, rerank_score, chunk_id, parent_id."},
+        {"Component": "ragas_eval", "Type": "RAGAS + local metrics", "Call Profile": "RAGAS judge scoring", "Role": "RAG layer evaluation for faithfulness, answer relevancy, context precision, and context recall."},
+        {"Component": "agent_intents", "Type": "LLM structured output + deterministic fallback", "Call Profile": "Intent classification", "Role": "Classifies provider/cost/recovery/risk/travel/find-evidence/general/unsafe/out-of-scope/needs-clarification."},
+        {"Component": "agent_tools", "Type": "Python wrappers around RAG", "Call Profile": "Tool-dependent RAG", "Role": "Domain tools call retrieval/reranking/generation and return AgentToolResult."},
+        {"Component": "agent_graph", "Type": "LangGraph workflow", "Call Profile": "Intent + tool path", "Role": "Routes to safety, out-of-scope, ask-human, domain tools, fallback, and final response."},
+        {"Component": "agent_session", "Type": "Pure Python", "Call Profile": "Session state", "Role": "Stores pending clarification and reruns after user supplies missing information."},
+        {"Component": "agent_recovery", "Type": "Pure Python", "Call Profile": "Recovery logic", "Role": "Normalizes status, fallback answers, low-confidence clarification, retry/fallback logic."},
+        {"Component": "react_care_agent", "Type": "LangGraph loop + ChatOpenAI", "Call Profile": "Bounded ReAct loop", "Role": "Reason → act → observe loop with max_steps=5; calls multiple Synataric tools for multi-step care plans."},
+        {"Component": "app", "Type": "Streamlit UI", "Call Profile": "User-action dependent", "Role": "Displays RAG, router agent, ReAct planner, evidence, diagnostics, and evaluation."},
+    ]
+
+
 def get_metric_cards(metrics: dict[str, Any]) -> list[dict[str, str]]:
     existing = metrics["existing_router"]
     fine = metrics["fine_tuned_router"]
@@ -891,28 +940,32 @@ def get_metric_cards(metrics: dict[str, Any]) -> list[dict[str, str]]:
         {
             "title": "Agent Eval",
             "value": f"{agent['post_improvement_overall']:.4f}",
-            "caption": f"F1 Score | was {agent['baseline_overall']:.4f}",
-            "delta": "+6.4%",
+            "previous": f"was {agent['baseline_overall']:.4f}",
+            "caption": "40-case golden dataset",
+            "delta": "+5.27 pts",
             "icon": "~",
         },
         {
             "title": "Router Accuracy",
             "value": f"{fine['accuracy']:.3f}",
-            "caption": f"Exact match | was {existing['accuracy']:.3f}",
-            "delta": "+80.2%",
+            "previous": f"was {existing['accuracy']:.3f}",
+            "caption": "Fine-tuned local router",
+            "delta": "+44.5 pts",
             "icon": "->",
         },
         {
-            "title": "Avg Latency",
+            "title": "Routing Latency",
             "value": f"{fine['average_latency_seconds']:.3f}s",
-            "caption": f"End-to-end | was {existing['average_latency_seconds']:.3f}s",
-            "delta": "-85.3%",
+            "previous": f"was {existing['average_latency_seconds']:.3f}s",
+            "caption": "Observed validation latency",
+            "delta": "~6.8× faster",
             "icon": "bolt",
         },
         {
-            "title": "Safety Bound",
+            "title": "Safety",
             "value": "Active",
-            "caption": "HITL enforced | Read-only tools",
+            "caption": "Read-only · HITL enforced",
+            "subtext": "Unsafe medical requests refused",
             "delta": "",
             "icon": "shield",
         },
@@ -925,7 +978,7 @@ def get_command_center_dashboard_data(metrics: dict[str, Any]) -> dict[str, Any]
     agent = metrics["agent_eval"]
     return {
         "title": "Synataric Global Healthcare Navigator",
-        "subtitle": "Care-navigation workflow layer for cross-border treatment planning",
+        "subtitle": "Empowering every human with world-class, affordable medical care through autonomous AI.",
         "badges": [
             "Educational navigation only",
             "MINT + ReAct",
@@ -933,88 +986,47 @@ def get_command_center_dashboard_data(metrics: dict[str, Any]) -> dict[str, Any]
             "Read-only tools",
         ],
         "pipeline_nodes": [
-            {
-                "title": "Corpus",
-                "subtitle": "Medical KB",
-                "chips": ["MD/TXT/PDF/CSV", "metadata", "0 LLM"],
-            },
-            {
-                "title": "RAG Evidence",
-                "subtitle": "Retrieval",
-                "display_subtitle": "Pinecone RAG",
-                "chips": [
-                    "text-embedding-3-small",
-                    "1536 dims",
-                    "fixed 700/120",
-                    "semantic 1200/180",
-                    "top_k",
-                    "FlashRank top_3",
-                ],
-            },
-            {
-                "title": "MINT Router",
-                "subtitle": "Orchestration",
-                "display_subtitle": "Lightest path",
-                "chips": ["RAG", "one tool", "ReAct", "safety first"],
-            },
-            {
-                "title": "Agent Tools",
-                "subtitle": "4 bound tools",
-                "display_subtitle": "Read-only",
-                "chips": ["provider", "cost", "recovery", "risk", "HITL"],
-            },
-            {
-                "title": "Bounded ReAct",
-                "subtitle": "Reasoning loop",
-                "display_subtitle": "Reason loop",
-                "chips": ["max_steps=5", "4 calls", "one tool/step"],
-            },
-            {
-                "title": "Grounded Plan",
-                "subtitle": "Structured output",
-                "display_subtitle": "Evidence answer",
-                "chips": ["GPT-4o-mini", "temp=0", "sources"],
-            },
-            {
-                "title": "Safety / HITL",
-                "display_title": "Safety / Evals",
-                "subtitle": "Evals",
-                "display_subtitle": "Trust layer",
-                "chips": ["LangSmith", "RAGAS", "40 cases", "0.8283→0.8810"],
-            },
+            {"title": "Corpus", "subtitle": "Medical KB"},
+            {"title": "Chunking", "subtitle": "Fixed + Semantic"},
+            {"title": "Embeddings", "subtitle": "OpenAI vectors"},
+            {"title": "Pinecone RAG", "subtitle": "Vector search"},
+            {"title": "FlashRank", "subtitle": "Local rerank"},
+            {"title": "MINT Router", "subtitle": "Lightest path"},
+            {"title": "Bounded ReAct", "subtitle": "Reason → Act"},
+            {"title": "Trust Layer", "subtitle": "Safety + HITL"},
         ],
         "kpis": [
             {
                 "title": "Agent Eval",
-                "label": "F1 score",
+                "label": "40-case golden dataset",
                 "value": f"{agent['post_improvement_overall']:.4f}",
-                "previous": f"{agent['baseline_overall']:.4f}",
-                "improvement": "+6.4%",
+                "previous": f"was {agent['baseline_overall']:.4f}",
+                "improvement": "+5.27 pts",
                 "accent": "blue",
             },
             {
-                "title": "Router",
-                "label": "Exact match",
+                "title": "Router Accuracy",
+                "label": "Fine-tuned local router",
                 "value": f"{fine['accuracy']:.3f}",
-                "previous": f"{existing['accuracy']:.3f}",
-                "improvement": "+80.2%",
+                "previous": f"was {existing['accuracy']:.3f}",
+                "improvement": "+44.5 pts",
                 "accent": "teal",
             },
             {
-                "title": "Latency",
-                "label": "Avg end-to-end",
+                "title": "Routing Latency",
+                "label": "Observed validation latency",
                 "value": f"{fine['average_latency_seconds']:.3f}s",
-                "previous": f"{existing['average_latency_seconds']:.3f}s",
-                "improvement": "-85.3%",
+                "previous": f"was {existing['average_latency_seconds']:.3f}s",
+                "improvement": "~6.8× faster",
                 "accent": "green",
             },
             {
                 "title": "Safety",
-                "label": "HITL enforced",
+                "label": "Read-only · HITL enforced",
                 "value": "Active",
                 "previous": "",
                 "improvement": "",
-                "subtext": "Read-only · HITL enforced",
+                "subtext": "Unsafe medical requests refused",
                 "accent": "slate",
             },
         ],
@@ -1040,10 +1052,15 @@ def get_command_center_dashboard_data(metrics: dict[str, Any]) -> dict[str, Any]
 def _pipeline_icon_svg(title: str) -> str:
     paths = {
         "Corpus": '<ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>',
+        "Chunking": '<path d="M4 7h16M4 12h10M4 17h16"/><path d="m16 10 3 2-3 2"/>',
+        "Embeddings": '<circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="m8 7 3 9M16 7l-3 9M8 6h8"/>',
+        "Pinecone RAG": '<circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/>',
+        "FlashRank": '<path d="M5 6h14M5 12h10M5 18h6"/><path d="m16 15 3 3 3-5"/>',
         "RAG Evidence": '<circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/>',
         "MINT Router": '<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="18" cy="14" r="2"/><path d="M8 18h2a4 4 0 0 0 4-4V8a2 2 0 0 1 2-2"/><path d="M14 14h2"/>',
         "Agent Tools": '<rect x="7" y="7" width="10" height="10" rx="1"/><rect x="10" y="10" width="4" height="4"/><path d="M9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4"/>',
         "Bounded ReAct": '<path d="m12 3-8 4 8 4 8-4-8-4Z"/><path d="m4 12 8 4 8-4"/><path d="m4 17 8 4 8-4"/>',
+        "Trust Layer": '<path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/>',
         "Grounded Plan": '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/><path d="m9 14 2 2 4-5"/>',
         "Safety / HITL": '<path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/>',
     }
@@ -1068,16 +1085,14 @@ def build_command_center_dashboard_html(data: dict[str, Any]) -> str:
     for index, node in enumerate(pipeline_nodes):
         active_class = " is-active" if node["title"] == "MINT Router" else ""
         connector = '<div class="syn-pipe-connector"></div>' if index < len(pipeline_nodes) - 1 else ""
-        chips_html = "".join(f'<span class="syn-node-chip">{_escape(chip)}</span>' for chip in node["chips"])
         pipeline_html.append(
             f"""
             <div class="syn-pipe-node{active_class}">
-              <div class="syn-node-icon">{_pipeline_icon_svg(node['title'])}</div>
-              <div>
-                <div class="syn-node-title">{_escape(node.get('display_title', node['title']))}</div>
-                <div class="syn-node-subtitle">{_escape(node.get('display_subtitle', node['subtitle']))}</div>
-                <div class="syn-node-chips">{chips_html}</div>
+              <div class="syn-node-heading">
+                <div class="syn-node-icon">{_pipeline_icon_svg(node['title'])}</div>
+                <div class="syn-node-title">{_escape(node['title'])}</div>
               </div>
+              <div class="syn-node-subtitle">{_escape(node['subtitle'])}</div>
             </div>
             {connector}
             """
@@ -1169,6 +1184,89 @@ body {{
   font-weight: 700;
   box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
 }}
+.syn-week-chip {{ display:inline-flex;align-items:center;margin-left:7px;padding:3px 7px;border:1px solid #B7D8F8;border-radius:7px;background:#EEF7FF;color:#075BA0;font:800 10px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:0;white-space:nowrap; }}
+.syn-week-chip.purple {{ border-color:#D7B8FF;background:#F7F0FF;color:#7030DB; }}.syn-week-chip.green {{ border-color:#99E5C4;background:#EFFCF6;color:#078E64; }}
+.syn-sprint {{ grid-column: 1 / -1; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 10px 12px; border: 1px solid #CFE1F5; border-radius: 13px; background: linear-gradient(135deg, #F8FBFF, #EDF6FF); }}
+.syn-sprint-step {{ position: relative; min-width: 0; padding: 7px 9px 7px 29px; border-right: 1px solid #D8E4F0; }}
+.syn-sprint-step:last-child {{ border-right: 0; }}
+.syn-sprint-dot {{ position: absolute; left: 5px; top: 8px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: #0B75BC; color: white; font-size: 10px; font-weight: 900; }}
+.syn-sprint-step:nth-child(2) .syn-sprint-dot {{ background:#0794B4; }}.syn-sprint-step:nth-child(3) .syn-sprint-dot {{ background:#7030DB; }}.syn-sprint-step:nth-child(4) .syn-sprint-dot,.syn-sprint-step:nth-child(5) .syn-sprint-dot {{ background:#07986C; }}.syn-sprint-step:nth-child(6) .syn-sprint-dot,.syn-sprint-step:nth-child(7) .syn-sprint-dot {{ color:#C76D00; background:#FFF5E5; border:2px solid #D97900; }}
+.syn-sprint-week {{ color:#7890AE; font:800 9px ui-monospace,SFMono-Regular,Menlo,monospace; }}
+.syn-sprint-name {{ overflow:hidden; margin-top:2px; color:#17304F; font-size:11px; font-weight:850; text-overflow:ellipsis; white-space:nowrap; }}
+.syn-sprint-note {{ margin-top:2px; color:#89A0BD; font:9px ui-monospace,SFMono-Regular,Menlo,monospace; white-space:nowrap; }}
+.syn-market {{ position: relative; z-index: 30; margin-bottom: 16px; }}
+.syn-market summary {{
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #0B75BC, #14B8A6);
+  color: #FFFFFF;
+  cursor: pointer;
+  list-style: none;
+  box-shadow: 0 8px 20px rgba(11, 117, 188, 0.20);
+}}
+.syn-market summary::-webkit-details-marker {{ display: none; }}
+.syn-market-dot {{ width: 7px; height: 7px; border-radius: 999px; background: #CCFBF1; flex: 0 0 auto; }}
+.syn-market-label {{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-weight: 900; letter-spacing: 0.12em; }}
+.syn-market-summary {{ color: #D8F3FF; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }}
+.syn-market-chevron {{ margin-left: auto; color: #D8F3FF; font-size: 16px; transition: transform 0.18s ease; }}
+.syn-market[open] .syn-market-chevron {{ transform: rotate(180deg); }}
+.syn-market-panel {{
+  position: relative;
+  margin-top: 8px;
+  padding: 20px;
+  border: 1px solid #B9DDF4;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #F7FBFF, #E9F8F7);
+  box-shadow: 0 22px 48px rgba(11, 117, 188, 0.22);
+}}
+.syn-market-title {{ color: #0F172A; font-size: 23px; font-weight: 850; }}
+.syn-market-copy {{ margin-top: 8px; color: #526B89; font-size: 12px; line-height: 1.55; }}
+.syn-market-grid {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }}
+.syn-market-card {{ min-height: 112px; padding: 14px; border: 1px solid #CFE1F5; border-radius: 10px; background: linear-gradient(145deg, #FFFFFF, #EEF7FF); }}
+.syn-market-icon {{ width: 30px; height: 30px; display: grid; place-items: center; border-radius: 999px; background: #DDF3FF; color: #0B75BC; font-weight: 900; }}
+.syn-market-card-title {{ margin-top: 9px; color: #0F172A; font-size: 14px; font-weight: 850; }}
+.syn-market-card-copy {{ margin-top: 5px; color: #526B89; font-size: 11px; line-height: 1.45; }}
+.syn-architecture-details {{ position: relative; z-index: 25; margin: -4px 0 18px; }}
+.syn-architecture-details summary {{
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 16px;
+  border: 1px solid #CFE1F5;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #F7FBFF, #EAF4FF);
+  color: #0F172A;
+  cursor: pointer;
+  list-style: none;
+  box-shadow: 0 8px 20px rgba(11, 117, 188, 0.10);
+}}
+.syn-architecture-details summary::-webkit-details-marker {{ display: none; }}
+.syn-architecture-summary-icon {{ width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; background: #0B75BC; color: #FFFFFF; font-size: 14px; }}
+.syn-architecture-summary-title {{ font-size: 13px; font-weight: 900; }}
+.syn-architecture-summary-meta {{ color: #7890AE; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }}
+.syn-architecture-chevron {{ margin-left: auto; color: #7890AE; font-size: 16px; transition: transform 0.18s ease; }}
+.syn-architecture-details[open] .syn-architecture-chevron {{ transform: rotate(180deg); }}
+.syn-architecture-panel {{
+  position: relative;
+  margin-top: 8px;
+  padding: 14px;
+  border: 1px solid #CFE1F5;
+  border-radius: 16px;
+  background: #FFFFFF;
+  box-shadow: 0 22px 48px rgba(15, 23, 42, 0.20);
+}}
+.syn-architecture-kicker {{ color: #7890AE; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; font-weight: 900; letter-spacing: 0.12em; }}
+.syn-architecture-grid {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }}
+.syn-architecture-card {{ min-height: 104px; padding: 12px; border: 1px solid #DDE5EF; border-radius: 13px; background: #F8FAFC; }}
+.syn-architecture-card-head {{ display: flex; align-items: center; gap: 8px; }}
+.syn-architecture-card-icon {{ width: 27px; height: 27px; display: grid; place-items: center; border: 1px solid #D7E3F0; border-radius: 8px; background: #FFFFFF; color: #0B75BC; font-weight: 900; }}
+.syn-architecture-card-title {{ color: #0F172A; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-weight: 900; }}
+.syn-architecture-pill {{ display: inline-block; margin: 9px 4px 0 0; padding: 3px 7px; border: 1px solid #CFE1F5; border-radius: 999px; background: #EEF7FF; color: #075BA0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9px; font-weight: 800; }}
 .syn-panel {{
   background: #FFFFFF;
   border: 1px solid #E2E8F0;
@@ -1190,7 +1288,7 @@ body {{
 .syn-pipe-row {{
   margin-top: 18px;
   display: grid;
-  grid-template-columns: repeat(7, minmax(128px, 1fr));
+  grid-template-columns: repeat(8, minmax(112px, 1fr));
   align-items: stretch;
   gap: 10px;
 }}
@@ -1199,10 +1297,9 @@ body {{
   height: 100%;
   border: 1px solid #D7E3F0;
   border-radius: 12px;
-  padding: 12px 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  padding: 10px;
+  display: block;
+  position: relative;
   background: linear-gradient(180deg, #F8FBFF, #F2F7FC);
 }}
 .syn-pipe-node.is-active {{
@@ -1224,15 +1321,39 @@ body {{
 }}
 .syn-node-icon svg {{ width: 16px; height: 16px; }}
 .is-active .syn-node-icon {{ background: rgba(255,255,255,0.2); color: #FFFFFF; }}
-.syn-node-title {{ font-size: 14px; font-weight: 850; white-space: nowrap; }}
+.syn-node-heading {{
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}}
+.syn-node-content {{ width: 100%; min-width: 0; }}
+.syn-node-title {{
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.2;
+  white-space: normal;
+  text-align: center;
+}}
 .syn-node-subtitle {{
   color: #7890AE;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12px;
-  margin-top: 3px;
+  min-height: 26px;
+  margin: 3px 0 0;
+  line-height: 1.25;
+  text-align: left;
 }}
 .is-active .syn-node-subtitle {{ color: #C8E7FF; }}
-.syn-node-chips {{ display: flex; flex-wrap: wrap; gap: 3px; margin-top: 7px; }}
+.syn-node-chips {{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 3px;
+  margin: 10px 0 0;
+  text-align: left;
+}}
 .syn-node-chip {{
   border: 1px solid #D7E3F0;
   border-radius: 999px;
@@ -1354,13 +1475,103 @@ body {{
         <div class="syn-subtitle">{_escape(data['subtitle'])}</div>
       </div>
       <div class="syn-badges">{badges_html}</div>
+      <div class="syn-sprint" aria-label="Seven-week development sprint">
+        <div class="syn-sprint-step"><span class="syn-sprint-dot">✓</span><div class="syn-sprint-week">WK 1</div><div class="syn-sprint-name">GenAI Building Blocks</div><div class="syn-sprint-note">Market context · corpus</div></div>
+        <div class="syn-sprint-step"><span class="syn-sprint-dot">✓</span><div class="syn-sprint-week">WK 2</div><div class="syn-sprint-name">RAG + Context Engineering</div><div class="syn-sprint-note">Retrieval · chunking · rerank</div></div>
+        <div class="syn-sprint-step"><span class="syn-sprint-dot">✓</span><div class="syn-sprint-week">WK 3</div><div class="syn-sprint-name">Agentic Leap</div><div class="syn-sprint-note">MINT · tools · ReAct</div></div>
+        <div class="syn-sprint-step"><span class="syn-sprint-dot">✓</span><div class="syn-sprint-week">WK 4</div><div class="syn-sprint-name">Evaluation + LangSmith</div><div class="syn-sprint-note">Golden dataset · measured gains</div></div>
+        <div class="syn-sprint-step"><span class="syn-sprint-dot">✓</span><div class="syn-sprint-week">WK 5</div><div class="syn-sprint-name">Fine-tuning the Router</div><div class="syn-sprint-note">0.555→1.000 · 0.340s</div></div>
+        <div class="syn-sprint-step"><span class="syn-sprint-dot">6</span><div class="syn-sprint-week">WK 6 · DEMO</div><div class="syn-sprint-name">Demo Experience</div><div class="syn-sprint-note">UI · scenarios · narrative</div></div>
+        <div class="syn-sprint-step"><span class="syn-sprint-dot">7</span><div class="syn-sprint-week">WK 7 · DEMO</div><div class="syn-sprint-name">Demo Readiness</div><div class="syn-sprint-note">Validation · presentation</div></div>
+      </div>
     </div>
 
+    <details class="syn-market" name="syn-dashboard-viewer">
+      <summary>
+        <span class="syn-market-dot"></span>
+        <span class="syn-market-label">MARKET CONTEXT</span><span class="syn-week-chip">Wk 1</span>
+        <span class="syn-market-summary">The Global Healthcare Crisis: A Looming Threat</span>
+        <span class="syn-market-chevron">⌄</span>
+      </summary>
+      <div class="syn-market-panel">
+        <div class="syn-market-title">The Global Healthcare Crisis: A Looming Threat</div>
+        <div class="syn-market-copy">
+          Healthcare systems worldwide face escalating access, cost, and wait-time pressures. Millions remain
+          underserved while fragmented cross-border care makes it difficult to find safe, evidence-grounded
+          provider, cost, recovery, and risk information.
+        </div>
+        <div class="syn-market-grid">
+          <div class="syn-market-card">
+            <div class="syn-market-icon">⌁</div>
+            <div class="syn-market-card-title">Systemic Failures</div>
+            <div class="syn-market-card-copy">Existing solutions remain fragmented and often fail to deliver safe, seamless cross-border care.</div>
+          </div>
+          <div class="syn-market-card">
+            <div class="syn-market-icon">◎</div>
+            <div class="syn-market-card-title">Economic Burden</div>
+            <div class="syn-market-card-copy">Healthcare inefficiencies and disconnected navigation create substantial cost and access burdens.</div>
+          </div>
+          <div class="syn-market-card">
+            <div class="syn-market-icon">↗</div>
+            <div class="syn-market-card-title">Untapped Opportunity</div>
+            <div class="syn-market-card-copy">A large digitally underserved market needs evidence-grounded, risk-aware healthcare navigation.</div>
+          </div>
+        </div>
+      </div>
+    </details>
+
     <section class="syn-panel syn-pipeline">
-      <div class="syn-section-title">ARCHITECTURE PIPELINE</div>
+      <div class="syn-section-title">ARCHITECTURE PIPELINE <span class="syn-week-chip purple">Wk 1–3</span></div>
       <div class="syn-pipe-row">{''.join(pipeline_html)}</div>
     </section>
 
+    <details class="syn-architecture-details" name="syn-dashboard-viewer">
+      <summary>
+        <span class="syn-architecture-summary-icon">⌘</span>
+        <span class="syn-architecture-summary-title">Architecture Details</span><span class="syn-week-chip purple">Wk 1–3</span>
+        <span class="syn-architecture-summary-meta">8 components · LangGraph workflow</span>
+        <span class="syn-architecture-chevron">⌄</span>
+      </summary>
+      <div class="syn-architecture-panel">
+        <div class="syn-architecture-kicker">COMPONENTS</div>
+        <div class="syn-architecture-grid">
+          <div class="syn-architecture-card">
+            <div class="syn-architecture-card-head"><span class="syn-architecture-card-icon">▣</span><span class="syn-architecture-card-title">Corpus</span></div>
+            <span class="syn-architecture-pill">MD/TXT/PDF/CSV</span><span class="syn-architecture-pill">Metadata</span><span class="syn-architecture-pill">Curated data</span>
+          </div>
+          <div class="syn-architecture-card">
+            <div class="syn-architecture-card-head"><span class="syn-architecture-card-icon">≋</span><span class="syn-architecture-card-title">Chunks</span></div>
+            <span class="syn-architecture-pill">700/120</span><span class="syn-architecture-pill">1200/180 fallback</span><span class="syn-architecture-pill">Section metadata</span>
+          </div>
+          <div class="syn-architecture-card">
+            <div class="syn-architecture-card-head"><span class="syn-architecture-card-icon">01</span><span class="syn-architecture-card-title">Embeddings</span></div>
+            <span class="syn-architecture-pill">text-embedding-3-small</span><span class="syn-architecture-pill">1536 dims</span>
+          </div>
+          <div class="syn-architecture-card">
+            <div class="syn-architecture-card-head"><span class="syn-architecture-card-icon">⌕</span><span class="syn-architecture-card-title">Pinecone RAG</span></div>
+            <span class="syn-architecture-pill">top_k</span><span class="syn-architecture-pill">cosine</span><span class="syn-architecture-pill">2 namespaces</span>
+          </div>
+          <div class="syn-architecture-card">
+            <div class="syn-architecture-card-head"><span class="syn-architecture-card-icon">⇵</span><span class="syn-architecture-card-title">FlashRank</span></div>
+            <span class="syn-architecture-pill">top_3</span><span class="syn-architecture-pill">intent boost</span><span class="syn-architecture-pill">provider aware</span>
+          </div>
+          <div class="syn-architecture-card">
+            <div class="syn-architecture-card-head"><span class="syn-architecture-card-icon">⌘</span><span class="syn-architecture-card-title">MINT + Tools</span></div>
+            <span class="syn-architecture-pill">1 classify</span><span class="syn-architecture-pill">read-only tools</span><span class="syn-architecture-pill">safety first</span>
+          </div>
+          <div class="syn-architecture-card">
+            <div class="syn-architecture-card-head"><span class="syn-architecture-card-icon">↻</span><span class="syn-architecture-card-title">Bounded ReAct</span></div>
+            <span class="syn-architecture-pill">max_steps=5</span><span class="syn-architecture-pill">4 validated calls</span><span class="syn-architecture-pill">one tool/step</span>
+          </div>
+          <div class="syn-architecture-card">
+            <div class="syn-architecture-card-head"><span class="syn-architecture-card-icon">✓</span><span class="syn-architecture-card-title">Trust Layer</span></div>
+            <span class="syn-architecture-pill">Safety + HITL</span><span class="syn-architecture-pill">LangSmith</span><span class="syn-architecture-pill">RAGAS</span><span class="syn-architecture-pill">40-case eval</span><span class="syn-architecture-pill">0.8283→0.8810</span>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <div class="syn-section-title" style="margin:2px 0 10px">PERFORMANCE METRICS <span class="syn-week-chip green">Wk 4–5</span></div>
     <section class="syn-kpi-grid">{''.join(kpi_html)}</section>
 
   </div>
@@ -1372,8 +1583,8 @@ body {{
 def render_command_center_dashboard(metrics: dict[str, Any]) -> None:
     st.components.v1.html(
         build_command_center_dashboard_html(get_command_center_dashboard_data(metrics)),
-        height=550,
-        scrolling=False,
+        height=650,
+        scrolling=True,
     )
 
 
@@ -2088,6 +2299,13 @@ def _workflow_step(
 
 def build_planned_workflow_for_scenario(scenario_key: str) -> list[dict[str, Any]]:
     key = str(scenario_key or "").lower().replace("_", " ")
+    if "usa gap" in key or "unsupported geography" in key:
+        return [
+            _workflow_step("sense", "Sense goal", "USA care-planning request detected.", phase="Sense"),
+            _workflow_step("coverage", "Check corpus coverage", "Checking geography-specific provider and cost coverage.", phase="Check"),
+            _workflow_step("gap", "Detect coverage gap", "USA provider and cost evidence is not available in the current corpus.", phase="Boundary"),
+            _workflow_step("final", "Return coverage response", "No provider, cost, recovery, or risk tools are called.", phase="Respond"),
+        ]
     if "multi" in key or "care plan" in key:
         return [
             _workflow_step(
@@ -2137,7 +2355,7 @@ def build_planned_workflow_for_scenario(scenario_key: str) -> list[dict[str, Any
             _workflow_step(
                 "final",
                 "Synthesize grounded care plan",
-                "Final answer generated from tool observations and retrieved evidence.",
+                "Grounded answer prepared from retrieved evidence.",
                 phase="Synthesize",
             ),
         ]
@@ -2290,7 +2508,7 @@ def extract_demo_result_fields(result: Any, expected_route: str, latency_seconds
         "safety_status": "Triggered" if status == "unsafe" or actual_route == "unsafe_medical" else "Clear",
         "warnings": [sanitize_demo_text(item) for item in result_dict.get("warnings", []) or []],
         "errors": [sanitize_demo_text(item) for item in result_dict.get("errors", []) or []],
-        "final_answer": sanitize_demo_text(final_answer),
+        "final_answer": sanitize_demo_multiline_text(final_answer),
     }
 
 
@@ -2301,7 +2519,7 @@ def _namespace(strategy: str) -> str:
 def _run_live_demo(question: str, scenario: dict[str, Any], strategy: str, top_k: int) -> tuple[Any, float, str | None]:
     started = time.perf_counter()
     try:
-        if scenario["expected_route"] == "care_plan_multistep":
+        if scenario["expected_route"] == "care_plan_multistep" or scenario.get("runner") == "react":
             from src.react_care_agent import run_react_care_agent
 
             result = run_react_care_agent(question, namespace=_namespace(strategy), top_k=top_k)
@@ -3223,13 +3441,15 @@ def render_workflow_timeline(steps: list[dict[str, Any]], label: str = "Navigato
     with st.container(border=True):
         st.markdown(f"#### {sanitize_demo_text(label)}")
         for start in range(0, len(steps), 4):
-            columns = st.columns(min(4, len(steps) - start))
-            for offset, column in enumerate(columns):
+            columns = st.columns(4)
+            for offset, column in enumerate(columns[: len(steps) - start]):
                 step = steps[start + offset]
                 status = str(step.get("status") or "waiting").lower()
                 marker = str(start + offset + 1)
                 if status == "complete":
                     marker = "✓"
+                elif status == "running":
+                    marker = "●"
                 elif status == "warning":
                     marker = "!"
                 elif status == "error":
@@ -3238,7 +3458,7 @@ def render_workflow_timeline(steps: list[dict[str, Any]], label: str = "Navigato
                 tool = sanitize_demo_text(step.get("tool"))
                 detail = sanitize_demo_text(step.get("detail"))
                 with column:
-                    with st.container(border=True):
+                    with st.container(border=True, height=170, key=f"syn_trace_step_{start + offset}"):
                         st.markdown(f"**{marker} {title}**")
                         if tool:
                             st.caption(tool)
@@ -3251,7 +3471,7 @@ def render_demo_console(strategy: str, top_k: int) -> None:
     with left:
         with st.container(border=True):
             st.markdown(
-                '<span class="syn-care-goal-marker"></span><div class="syn-care-goal-title">CARE GOAL</div>',
+                '<span class="syn-care-goal-marker"></span><div class="syn-care-goal-title">CARE GOAL <span class="syn-care-week">Wk 3</span></div>',
                 unsafe_allow_html=True,
             )
             scenario_name = st.selectbox("Scenario", list(DEMO_SCENARIOS.keys()), label_visibility="collapsed")
@@ -3304,7 +3524,7 @@ def render_demo_console(strategy: str, top_k: int) -> None:
 def render_demo_console(strategy: str, top_k: int) -> None:
     with st.container(border=True):
         st.markdown(
-            '<span class="syn-care-goal-marker"></span><div class="syn-care-goal-title">CARE GOAL</div>',
+            '<span class="syn-care-goal-marker"></span><div class="syn-care-goal-title">CARE GOAL <span class="syn-care-week">Wk 3</span></div>',
             unsafe_allow_html=True,
         )
         scenario_name = st.selectbox("Scenario", list(DEMO_SCENARIOS.keys()), label_visibility="collapsed")
@@ -3323,16 +3543,34 @@ def render_demo_console(strategy: str, top_k: int) -> None:
             label_visibility="collapsed",
         )
         run_clicked = st.button("▶ Run Navigator", type="primary", use_container_width=False)
+        live_trace_slot = st.empty()
+
+        if not run_clicked and (st.session_state.get("demo_mode_result") or st.session_state.get("demo_mode_error")):
+            with live_trace_slot.container():
+                render_workflow_timeline(
+                    st.session_state.get("demo_mode_workflow_steps") or [],
+                    st.session_state.get("demo_mode_workflow_label", "Navigator Live Trace"),
+                )
 
     if run_clicked:
         planned_steps = build_planned_workflow_for_scenario(scenario_name)
+        live_steps = [
+            {**step, "status": "running" if index == 0 else "waiting"}
+            for index, step in enumerate(planned_steps)
+        ]
         st.session_state.demo_mode_workflow_steps = planned_steps
-        st.session_state.demo_mode_workflow_label = "Navigator Trace"
-        with st.status("Running Synataric Navigator...", expanded=False):
-            result, latency, error = _run_live_demo(question, scenario, strategy, top_k)
+        st.session_state.demo_mode_workflow_label = "Navigator Live Trace"
+        with live_trace_slot.container():
+            with st.status("Navigator is working on your care goal...", expanded=True) as live_status:
+                render_workflow_timeline(live_steps, "Navigator Live Trace")
+                result, latency, error = _run_live_demo(question, scenario, strategy, top_k)
+                if error:
+                    live_status.update(label="Navigator completed with a fallback", state="error", expanded=True)
+                else:
+                    live_status.update(label="Navigator completed the care workflow", state="complete", expanded=False)
         actual_steps = extract_actual_workflow(result)
         st.session_state.demo_mode_workflow_steps = actual_steps or [{**step, "status": "complete"} for step in planned_steps]
-        st.session_state.demo_mode_workflow_label = "Navigator Trace"
+        st.session_state.demo_mode_workflow_label = "Navigator Live Trace"
         st.session_state.demo_mode_result = result
         st.session_state.demo_mode_latency = latency
         st.session_state.demo_mode_error = error
@@ -3344,12 +3582,6 @@ def render_demo_console(strategy: str, top_k: int) -> None:
         } or _normalize_result(result).get("status") == "coverage_gap"
         st.session_state.demo_mode_question_ran = question
         st.rerun()
-
-    if st.session_state.get("demo_mode_result") or st.session_state.get("demo_mode_error"):
-        render_workflow_timeline(
-            st.session_state.get("demo_mode_workflow_steps") or [],
-            st.session_state.get("demo_mode_workflow_label", "Navigator Trace"),
-        )
 
     render_command_center_run_output()
 
@@ -3364,58 +3596,70 @@ def render_architecture_details_tab() -> None:
     )
 
 
-def render_evaluation_details_tab() -> None:
-    st.markdown("### Golden dataset")
-    columns = st.columns(4)
-    columns[0].metric("Dataset", "Synataric-Agent-Golden-Dataset-V1")
-    columns[1].metric("Size", "40 cases")
-    columns[2].metric("Mix", "20 / 12 / 6 / 2")
-    columns[3].metric("Modes", "28 router / 12 ReAct")
-    st.caption("Mix: 20 happy path, 12 edge, 6 known failure, 2 adversarial.")
-
-    st.markdown("### Judge method now")
-    for item in [
-        "deterministic code checks",
-        "trajectory checks",
-        "source checks",
-        "safety checks",
-        "out-of-scope checks",
-        "path leakage checks",
-        "LangSmith tracing",
-    ]:
-        st.write(f"- {item}")
-
-    st.markdown("### Honest LLM-as-Judge note")
-    st.info(
-        "LLM-as-Judge is designed as the next enterprise step, but it has not yet been run for the Week 4 "
-        "agent benchmark. Earlier RAGAS scoring is LLM-based for the RAG layer, not the agent benchmark."
+def render_development_sprint() -> None:
+    st.components.v1.html(
+        """
+        <style>
+        *{box-sizing:border-box}body{margin:0;background:#eef4fb;color:#10213d;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}.sprint{overflow:hidden;border:1px solid #d8e3ef;border-radius:20px;background:white;box-shadow:0 12px 30px #17385a14}.head{display:flex;align-items:center;gap:14px;padding:19px 28px;border-bottom:1px solid #d8e3ef;background:#f1f6fc}.bolt{display:grid;place-items:center;width:35px;height:35px;border-radius:8px;background:#0788b4;color:white;font-size:20px}.head strong{font-size:15px}.meta{color:#89a0bd;font:12px ui-monospace,monospace}.active{margin-left:auto;color:#d77700;font:800 12px ui-monospace,monospace}.body{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:14px;padding:24px 35px 26px}.line{position:absolute;top:52px;left:5%;right:5%;height:1px;background:linear-gradient(90deg,#0875ae 0 78%,#d7e1eb 78%)}.week{position:relative;text-align:center}.node{display:grid;place-items:center;width:46px;height:46px;margin:3px auto 13px;border-radius:50%;background:#0b75aa;color:white;font-weight:900;box-shadow:0 0 0 6px white}.week:nth-of-type(3) .node{background:#0794b4}.week:nth-of-type(4) .node{background:#7030db}.week:nth-of-type(5) .node{background:#07986c}.week:nth-of-type(6) .node{color:#10213d;background:#fff;border:3px solid #d97900;box-shadow:0 0 0 6px #fff2df}.label{display:inline-block;padding:4px 8px;border:1px solid #a9d3f3;border-radius:7px;background:#eff8ff;color:#0872aa;font:11px ui-monospace,monospace}.week:nth-of-type(3) .label{border-color:#9de4ee;background:#effdff;color:#0786a5}.week:nth-of-type(4) .label{border-color:#d6befd;background:#f6f0ff;color:#6930d2}.week:nth-of-type(5) .label{border-color:#9be3c4;background:#effcf5;color:#078b62}.week:nth-of-type(6) .label{border-color:#ffd18a;background:#fff7e9;color:#c76d00}.current{display:inline-block;margin-left:5px;padding:4px 7px;border-radius:999px;background:#fff3e3;color:#d87700;font:700 10px ui-monospace,monospace}.week h3{margin:8px 0 4px;font-size:14px}.week p{min-height:35px;margin:0;color:#8ca2bf;font:12px/1.45 ui-monospace,monospace}.chips{display:flex;justify-content:center;gap:5px;flex-wrap:wrap;margin-top:10px}.chip{padding:4px 7px;border:1px solid #add3ff;border-radius:7px;background:#f2f8ff;color:#0871aa;font:10px ui-monospace,monospace}.week:nth-of-type(3) .chip{border-color:#8ee8f2;background:#effdff;color:#0788a8}.week:nth-of-type(4) .chip{border-color:#d9c3ff;background:#f7f2ff;color:#7030db}.week:nth-of-type(5) .chip{border-color:#99e8c4;background:#effcf6;color:#078e64}.week:nth-of-type(6) .chip{border-color:#ffd071;background:#fff9e9;color:#c86d00}
+        </style>
+        <section class="sprint"><header class="head"><span class="bolt">ϟ</span><strong>Development Sprint</strong><span class="meta">5 weeks · GenAI → RAG → Agents → Evals → Router fine-tuning</span><span class="active">● Wk 5 active</span></header><div class="body"><div class="line"></div><article class="week"><div class="node">✓</div><span class="label">Wk 1</span><h3>GenAI Building Blocks</h3><p>Market context + corpus foundation</p><div class="chips"><span class="chip">Market Context</span><span class="chip">Corpus</span><span class="chip">Document Loaders</span></div></article><article class="week"><div class="node">✓</div><span class="label">Wk 2</span><h3>RAG + Context Engineering</h3><p>Retrieval, chunking, reranking</p><div class="chips"><span class="chip">RAG Evidence</span><span class="chip">Retrieval</span><span class="chip">RAGAS</span></div></article><article class="week"><div class="node">✓</div><span class="label">Wk 3</span><h3>Agentic Leap</h3><p>MINT router · tools · Bounded ReAct</p><div class="chips"><span class="chip">MINT Router</span><span class="chip">Agent Tools</span><span class="chip">Bounded ReAct</span><span class="chip">Safety</span></div></article><article class="week"><div class="node">✓</div><span class="label">Wk 4</span><h3>Evaluation + LangSmith</h3><p>Golden dataset benchmark · measured gains</p><div class="chips"><span class="chip">Agent Eval F1</span><span class="chip">LangSmith Tracing</span><span class="chip">RAGAS layer</span></div></article><article class="week"><div class="node">5</div><span class="label">Wk 5</span><span class="current">current</span><h3>Fine-tuning the Router</h3><p>Router accuracy 0.555 → 1.000</p><div class="chips"><span class="chip">Router 1.000</span><span class="chip">Latency 0.340s</span></div></article></div></section>
+        """,
+        height=430,
+        scrolling=False,
     )
 
-    st.markdown("### Baseline vs Post Improvement")
-    st.dataframe(pd.DataFrame(get_eval_delta_rows()), use_container_width=True, hide_index=True)
+
+def render_evaluation_details_tab() -> None:
+    rows = get_eval_delta_rows()[:8]
+    metric_rows = "".join(
+        f'''<div class="metric-row"><div class="metric-name">{row["metric"]}<span class="bar"><i style="width:{float(row["post"])*100:.1f}%"></i></span></div><span class="baseline">{row["baseline"]}</span><span class="post">{row["post"]}</span><span class="delta {'flat' if row['delta'] == '0.0000' else ''}">{'↗ ' if row['delta'] != '0.0000' else ''}{row["delta"]}</span></div>'''
+        for row in rows
+    )
+    st.components.v1.html(
+        f"""
+        <style>
+        .evidence-head strong:after{{content:"Wk 4";display:inline-block;margin-left:9px;padding:4px 8px;border:1px solid #99e5c4;border-radius:7px;background:#effcf6;color:#078e64;font:800 10px ui-monospace,monospace;vertical-align:middle}}
+        *{{box-sizing:border-box}}body{{margin:0;color:#10213d;background:#fff;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}}.mono,.section-title,.meta,.summary label,.mix-label,.metric-table,.check-list,.ragas{{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}}.evidence{{overflow:hidden;border:1px solid #d7e2ee;border-radius:18px;background:#fff}}.evidence-head{{display:flex;align-items:center;gap:14px;padding:18px 24px;border-bottom:1px solid #d7e2ee;background:#f1f6fc}}.flask{{display:grid;place-items:center;width:34px;height:34px;border-radius:8px;background:#078db5;color:white;font-size:18px}}.evidence-head strong{{font-size:15px}}.meta{{color:#89a0be;font-size:12px}}.body{{padding:24px}}.section-title{{margin:0 0 14px;color:#8ba1bd;font-size:12px;font-weight:800;letter-spacing:.12em}}.summaries{{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}}.summary{{min-height:90px;padding:17px;border:1px solid #d9e3ee;border-radius:14px;background:#f7faff}}.summary label{{display:block;margin-bottom:11px;color:#8ba1bd;font-size:11px;font-weight:800}}.summary b{{font:700 15px ui-monospace,SFMono-Regular,Menlo,monospace}}.mix{{display:flex;align-items:center;gap:10px;margin:13px 0 25px;flex-wrap:wrap}}.mix-label{{color:#8ba1bd;font-size:11px;font-weight:800}}.pill{{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border:1px solid #87e7bd;border-radius:999px;background:#edfcf5;color:#07966b;font:700 11px ui-monospace,monospace}}.pill i{{display:grid;place-items:center;width:19px;height:19px;border-radius:50%;background:#16a875;color:white;font-style:normal}}.pill.edge{{border-color:#8ce8f3;background:#effcff;color:#078ba9}}.pill.edge i{{background:#159bbb}}.pill.failure{{border-color:#ffd36b;background:#fff9e9;color:#cb7100}}.pill.failure i{{background:#d67a00}}.pill.adversarial{{border-color:#ff9c9c;background:#fff1f1;color:#df3535}}.pill.adversarial i{{background:#dc3333}}.grid{{display:grid;grid-template-columns:38% 62%;gap:22px}}.check-list{{display:grid;gap:7px}}.check{{display:flex;align-items:center;gap:11px;min-height:43px;padding:9px 13px;border:1px solid #dbe5ef;border-radius:10px;background:#f7faff;font-size:13px;font-weight:700}}.check .icon{{display:grid;place-items:center;width:27px;height:27px;border-radius:8px;background:#edf6ff;color:#0878bd}}.check .ok{{margin-left:auto;color:#00bb8b}}.ragas{{margin-top:18px;padding:14px 17px;border:1px solid #a9ceff;border-radius:13px;background:#eef6ff;color:#2454c6;font-size:12px;line-height:1.55}}.ragas b{{display:block;margin-bottom:6px;color:#1268a0}}.table-title{{display:flex;align-items:center;justify-content:space-between}}.legend{{color:#8ba1bd;font:11px ui-monospace,monospace}}.legend .b{{color:#cbd6e4}}.legend .p{{color:#0874ad}}.legend .d{{color:#07966b}}.metric-table{{overflow:hidden;border:1px solid #dbe5ef;border-radius:14px}}.table-head,.metric-row{{display:grid;grid-template-columns:2.2fr .9fr .9fr .8fr;align-items:center}}.table-head{{padding:13px 16px;background:#f1f6fc;color:#8ba1bd;font-size:11px;font-weight:800}}.metric-row{{min-height:54px;padding:9px 16px;border-top:1px solid #e8eef4;font-size:13px;font-weight:700}}.metric-name{{display:flex;flex-direction:column;gap:8px}}.bar{{display:block;width:72%;height:5px;border-radius:999px;background:#e9eff6}}.bar i{{display:block;height:100%;border-radius:999px;background:#3388b6}}.baseline{{color:#9aaec7}}.post{{color:#006ca8}}.delta{{justify-self:start;padding:5px 9px;border:1px solid #91e7bd;border-radius:999px;background:#edfcf5;color:#078f65;white-space:nowrap}}.delta.flat{{border-color:#d8e3ef;background:#f7faff;color:#91a5bf}}.judge{{margin-top:14px;padding:13px 16px;border:1px solid #ffd36b;border-radius:13px;background:#fff9e9;color:#ad5000;font-size:12px;line-height:1.5}}.judge b{{display:block;font-family:ui-monospace,monospace}}@media(max-width:850px){{.summaries{{grid-template-columns:1fr 1fr}}.grid{{grid-template-columns:1fr}}}}
+        </style>
+        <section class="evidence"><header class="evidence-head"><span class="flask">⚗</span><strong>Evaluation Evidence</strong><span class="meta">Golden dataset · Week 4 benchmark · Baseline vs Post</span></header><div class="body"><h3 class="section-title">GOLDEN DATASET</h3><div class="summaries"><div class="summary"><label>DATASET</label><b>Synataric-Agent-<br>Golden-Dataset</b></div><div class="summary"><label>SIZE</label><b>40 cases</b></div><div class="summary"><label>MIX</label><b>20 / 12 / 6 / 2</b></div><div class="summary"><label>MODES</label><b>28 router / 12 ReAct</b></div></div><div class="mix"><span class="mix-label">Mix breakdown:</span><span class="pill"><i>20</i>Happy path</span><span class="pill edge"><i>12</i>Edge</span><span class="pill failure"><i>6</i>Known failure</span><span class="pill adversarial"><i>2</i>Adversarial</span></div><div class="grid"><div><h3 class="section-title">WEEK 4 AGENT BENCHMARK</h3><div class="check-list"><div class="check"><span class="icon">01</span>Deterministic code checks<span class="ok">⊙</span></div><div class="check"><span class="icon">⌘</span>Trajectory checks<span class="ok">⊙</span></div><div class="check"><span class="icon">▣</span>Source checks<span class="ok">⊙</span></div><div class="check"><span class="icon">♢</span>Safety checks<span class="ok">⊙</span></div><div class="check"><span class="icon">⊘</span>Out-of-scope checks<span class="ok">⊙</span></div><div class="check"><span class="icon">⌘</span>Path leakage checks<span class="ok">⊙</span></div><div class="check"><span class="icon">∿</span>LangSmith tracing<span class="ok">⊙</span></div></div><div class="ragas"><b>▣ &nbsp; RAGAS</b>LLM-based scoring for the RAG layer — not the agent benchmark.</div></div><div><div class="table-title"><h3 class="section-title">BASELINE VS POST IMPROVEMENT</h3><span class="legend"><span class="b">●</span> Baseline &nbsp; <span class="p">●</span> Post &nbsp; <span class="d">●</span> Delta +</span></div><div class="metric-table"><div class="table-head"><span>METRIC</span><span>BASELINE</span><span>POST</span><span>DELTA</span></div>{metric_rows}</div><div class="judge"><b>⚠ &nbsp; HONEST LLM-AS-JUDGE NOTE</b>LLM-as-Judge is designed as the next enterprise step but has not yet been run for the Week 4 agent benchmark. Earlier RAGAS scoring is LLM-based for the RAG layer only.</div></div></div></div></section>
+        """,
+        height=870,
+        scrolling=False,
+    )
+
+
+def render_future_product_vision() -> None:
+    st.components.v1.html(
+        """
+        <style>
+        *{box-sizing:border-box} body{margin:0;background:#eef4fb;color:#10213d;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column}
+        .vision-label{order:0}.roadmap{order:1}.revenue + .panel{order:2}.revenue{order:3}
+        .vision-label{display:flex;align-items:center;justify-content:center;gap:10px;margin:4px 0 20px;color:#547398;font:800 13px ui-monospace,monospace;letter-spacing:.14em}.vision-label:before,.vision-label:after{content:"";height:1px;background:#ccdaea;flex:1}.vision-label span{background:white;padding:9px 18px;border-radius:999px;box-shadow:0 5px 15px #17385a18}
+        .panel{overflow:hidden;border:1px solid #d5e2f0;border-radius:22px;background:white;box-shadow:0 14px 36px #15355216;margin-bottom:24px}.tag{display:inline-flex;align-items:center;justify-content:center;align-self:flex-start;flex:0 0 auto;width:auto;min-width:0;height:24px;border:1px solid #82ddee;border-radius:999px;background:#ecfeff;color:#087e9b;padding:3px 10px;font-size:12px;line-height:1;white-space:nowrap}
+        .revenue-head{padding:28px 30px 26px;background:linear-gradient(135deg,#102a4d,#153f70);color:white}.head-row{display:flex;justify-content:space-between;gap:20px}.revenue-head h2,.journey-head h2{font-size:20px;margin:0 0 7px}.revenue-head p,.journey-head p{margin:0;color:#91a8c5;line-height:1.55}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:24px}.kpi{min-height:145px;border:1px solid #446381;border-radius:16px;background:#ffffff0d;padding:20px}.kpi strong{display:block;font-size:34px}.kpi b{display:block;margin-top:5px;color:#d1dceb}.kpi small{display:block;margin-top:8px;color:#849ab5;font:700 12px ui-monospace,monospace;line-height:1.6}
+        .streams{display:grid;grid-template-columns:repeat(3,1fr)}.stream{min-height:330px;padding:26px 24px;border-right:1px solid #e1e8f0}.stream:last-child{border:0}.stream h3{margin:0 0 20px;font-size:17px}.icon{display:inline-grid;place-items:center;width:40px;height:40px;margin-right:10px;border:1px solid #9bc7ff;border-radius:14px;background:#eef6ff;color:#0874b9;font-weight:900}.stream:nth-child(2) .icon{border-color:#86e5ee;background:#ebfdff}.stream:nth-child(3) .icon{border-color:#8cebc3;background:#ecfdf5;color:#079669}.stats{display:flex;gap:9px;flex-wrap:wrap}.stat{border:1px solid #b9d8ff;border-radius:11px;background:#f1f7ff;padding:10px 13px}.stream:nth-child(2) .stat{border-color:#8be6ef;background:#ecfdff}.stream:nth-child(3) .stat{border-color:#95ebc8;background:#ecfcf4}.stat label{display:block;color:#7890ae;font:700 11px ui-monospace,monospace}.stat b{display:block;margin-top:5px}.stream p{color:#7890ae;line-height:1.65}.annual{display:flex;justify-content:space-between;margin-top:18px;border:1px solid #a9d0ff;border-radius:14px;background:#edf6ff;padding:16px;font:800 12px ui-monospace,monospace}.annual strong{font:900 18px ui-sans-serif,system-ui}.stream:nth-child(3) .annual{border-color:#8ce8be;background:#ecfcf4}
+        .journey-head{padding:25px 30px;border-bottom:1px solid #d8e3ef;background:linear-gradient(135deg,#f8fbff,#edf5fc)}.journey-body{padding:30px}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:34px}.step{min-height:330px;border:1px solid #b9d8ff;border-radius:16px;background:#f1f7ff;padding:22px}.step:nth-child(2){border-color:#8be6ef;background:#ecfdff}.step:nth-child(3){border-color:#8de9bd;background:#ecfcf4}.step h3{font-size:17px;margin:0 0 5px}.step small{font:800 11px ui-monospace,monospace}.step ul{padding-left:18px;line-height:1.55}.step li{margin:8px 0}.step em{display:block;margin-top:18px;color:#0874b9;line-height:1.5}.step:nth-child(3) em{color:#079669}.comparison{display:grid;grid-template-columns:1fr 1fr;margin-top:18px;border:1px solid #d8e3ef;border-radius:14px;overflow:hidden}.comparison div{padding:14px}.comparison div+div{background:#ecfcf4}.comparison b{display:block;font-size:22px}.saving,.outcome{margin-top:14px;border:1px solid #8de9bd;border-radius:14px;background:#dcfbea;padding:16px;text-align:center;color:#07885c;font-weight:800}.outcome strong{display:block;font-size:35px}
+        .roadmap-head{display:flex;align-items:center;justify-content:space-between;padding:22px 30px;border-bottom:1px solid #d8e3ef;background:linear-gradient(135deg,#f8fbff,#edf5fc)}.roadmap-head h2{margin:0;font-size:18px}.deploy{color:#009a6b;font:800 12px ui-monospace,monospace}.roadmap-body{display:grid;grid-template-columns:31% 69%}.today,.upcoming{padding:26px 28px}.today{border-right:1px solid #e1e8f0}.eyebrow{color:#009a6b;font:800 12px ui-monospace,monospace}.live-card{margin-top:18px;padding:22px;border:1px solid #83e8bd;border-radius:15px;background:#ecfcf4}.live-card h3{margin:0 0 16px;color:#006c50}.live-card p{color:#087d62;line-height:1.6}.chips{display:flex;flex-wrap:wrap;gap:8px}.chip{padding:5px 10px;border:1px solid #8de9bd;border-radius:999px;background:#d9fbea;color:#00765a;font:700 11px ui-monospace,monospace}.upcoming-top{display:flex;justify-content:space-between}.upcoming .eyebrow{color:#078bae}.count{color:#8aa1bf;font:700 12px ui-monospace,monospace}.features{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}.feature{min-height:92px;padding:14px;border:1px solid #d8e3ef;border-radius:14px;background:#f7faff}.feature small{color:#91a5c0;font:800 11px ui-monospace,monospace}.feature b{display:block;margin-top:4px;font-size:14px}.policy{margin-top:16px;padding:13px 16px;border:1px solid #f2c94c;border-radius:13px;background:#fff9e8;color:#a84b0b}
+        .panel{margin-bottom:14px}.roadmap-head,.journey-head{padding:17px 24px}.today,.upcoming{padding:18px 22px}.live-card{margin-top:12px;padding:16px}.live-card h3{margin-bottom:9px}.live-card p{margin:8px 0;line-height:1.45}.features{margin-top:12px;gap:8px}.feature{min-height:70px;padding:10px}.policy{margin-top:10px;padding:10px 13px}.journey-body{padding:20px}.steps{gap:20px}.step{min-height:265px;padding:17px}.step ul{line-height:1.4}.step li{margin:5px 0}.step em{margin-top:10px}.comparison{margin-top:10px}.comparison div{padding:10px}.saving,.outcome{margin-top:9px;padding:11px}.outcome strong{font-size:30px}.revenue-head{padding:20px 24px}.kpis{gap:12px;margin-top:16px}.kpi{min-height:112px;padding:14px}.kpi strong{font-size:29px}.stream{min-height:270px;padding:18px}.stream h3{margin-bottom:13px}.stream p{line-height:1.45}.annual{margin-top:10px;padding:12px}
+        .head-row{align-items:flex-start}.roadmap-head h2:after{content:"Wk 5";display:inline-block;margin-left:9px;padding:4px 8px;border:1px solid #ffd18a;border-radius:7px;background:#fff7e9;color:#c76d00;font:800 10px ui-monospace,monospace;vertical-align:middle}
+        </style>
+        <div class="vision-label"><span>🚀 FUTURE PRODUCT VISION</span></div>
+        <section class="panel roadmap"><div class="roadmap-head"><h2>🚀 &nbsp; Production Roadmap</h2><span class="deploy">● DEPLOY</span></div><div class="roadmap-body"><div class="today"><div class="eyebrow">● TODAY — LIVE</div><div class="live-card"><h3>✓ &nbsp; Read-only Navigator</h3><p>Read-only navigation over a curated Synataric corpus — grounded, evaluated, HITL-bounded.</p><div class="chips"><span class="chip">RAG retrieval</span><span class="chip">MINT router</span><span class="chip">Bounded ReAct</span><span class="chip">Safety evals</span></div></div></div><div class="upcoming"><div class="upcoming-top"><div class="eyebrow">● NEXT — UPCOMING</div><span class="count">8 features</span></div><div class="features"><div class="feature"><small>01</small><b>Provider APIs</b></div><div class="feature"><small>02</small><b>Appointment request workflow</b></div><div class="feature"><small>03</small><b>Insurance verification</b></div><div class="feature"><small>04</small><b>Travel / lodging APIs</b></div><div class="feature"><small>05</small><b>Document checklist</b></div><div class="feature"><small>06</small><b>Secure patient profile</b></div><div class="feature"><small>07</small><b>FHIR / records connectors</b></div><div class="feature"><small>08</small><b>Care coordinator handoff</b></div></div><div class="policy"><strong>⚠ Write-action policy:</strong> Any booking, payment, provider outreach, insurance submission, or message sending requires explicit human approval before execution.</div></div></div></section>
+        <section class="panel revenue">
+          <div class="revenue-head"><div class="head-row"><div><h2>Unlock Exponential Growth: Triple Revenue Stream Model</h2><p>Designed for aggressive scaling — leveraging diverse revenue streams and strong unit economics.</p></div><span class="tag">✧ Vision scenario</span></div>
+            <div class="kpis"><div class="kpi"><strong>$120M</strong><b>Projected SaaS Revenue</b><small>Scalable subscription services</small></div><div class="kpi"><strong>$375M</strong><b>Projected Marketplace Commission</b><small>Driven by transaction volume</small></div><div class="kpi"><strong>$35M</strong><b>Projected Data Licensing</b><small>High-value enterprise insights</small></div><div class="kpi"><strong>15:1</strong><b>LTV to CAC Ratio</b><small>Exceptional acquisition efficiency</small></div></div>
+          </div>
+          <div class="streams"><div class="stream"><h3><span class="icon">$</span>SaaS Subscription Revenue</h3><div class="stats"><div class="stat"><label>Target users</label><b>10,000</b></div><div class="stat"><label>ARPU</label><b>$180</b></div></div><p>Predictable recurring revenue through premium features and advanced AI navigation tools across a growing global user base.</p><div class="annual"><span>ANNUAL REVENUE</span><strong>$1.8 Million</strong></div></div><div class="stream"><h3><span class="icon">▣</span>Marketplace Commission Revenue</h3><div class="stats"><div class="stat"><label>Medical trips facilitated</label><b>8,000</b></div><div class="stat"><label>Avg trip cost</label><b>~$6,000</b></div><div class="stat"><label>Commission rate</label><b>12%</b></div></div><p>We capture value from every successful medical-travel transaction, connecting patients with providers efficiently and transparently.</p><div class="annual"><span>ANNUAL REVENUE</span><strong>$5.76 Million</strong></div></div><div class="stream"><h3><span class="icon">⌁</span>Data Licensing Revenue</h3><div class="stats"><div class="stat"><label>Enterprise clients</label><b>3</b></div><div class="stat"><label>Avg license fee</label><b>~$250,000</b></div></div><p>Monetizing anonymized, aggregated market insights and trends for healthcare organizations and policymakers.</p><div class="annual"><span>ANNUAL REVENUE</span><strong>$0.75 Million</strong></div></div></div>
+        </section>
+        <section class="panel"><div class="journey-head"><div class="head-row"><div><h2>Synataric Patient Journey: Seamless Care, Global Access</h2><p>Experience the future of medical tourism — AI-guided, end-to-end, personalized.</p></div><span class="tag">✧ Vision scenario</span></div></div><div class="journey-body"><div class="steps"><div><div class="step"><h3>◉ AI-Powered Diagnosis &amp; Decision</h3><small>STEP 01</small><ul><li>Patient describes symptoms through an AI voice agent</li><li>System surfaces a clear, data-backed care choice</li></ul><em>Making informed decisions has never been faster or clearer.</em></div><div class="comparison"><div><small>US OPTION</small><b>$113,000</b><span>6-month wait</span></div><div><small>GLOBAL OPTION</small><b>$10,000</b><span>2-week availability</span></div></div><div class="saving">↘ Potential saving: $103,000</div></div><div class="step"><h3>✈ Automated Logistics &amp; Coordination</h3><small>STEP 02</small><ul><li>Automatically files visa applications</li><li>Books optimal flights and accommodation</li><li>Securely transfers medical records</li><li>Schedules pre-operative virtual consultations</li></ul><em>Executed seamlessly — with human approval for consequential actions.</em></div><div><div class="step"><h3>♡ AI-Monitored Recovery &amp; Savings</h3><small>STEP 03</small><ul><li>AI-monitored recovery protocols</li><li>Scheduled virtual follow-ups</li><li>Proactive continuous-care coordination</li></ul><em>Demonstrating the potential value and efficiency of Synataric Global.</em></div><div class="outcome">FINAL OUTCOME<strong>$103,000</strong>Potential patient savings</div></div></div></div></section>
+        """,
+        height=1650,
+        scrolling=False,
+    )
 
 
 def render_production_roadmap_tab() -> None:
-    st.markdown("### Production Roadmap")
-    with st.container(border=True):
-        st.markdown("#### Today")
-        st.write("Read-only navigation over a curated Synataric corpus.")
-        st.markdown("#### Next")
-        for item in [
-            "provider APIs",
-            "appointment request workflow",
-            "insurance verification",
-            "travel/lodging APIs",
-            "document checklist",
-            "secure patient profile",
-            "FHIR/records connectors",
-            "care coordinator handoff",
-        ]:
-            st.write(f"- {item}")
-        st.warning(
-            "Any write action - booking, payment, provider outreach, insurance submission, or message sending - "
-            "requires human approval."
-        )
+    render_future_product_vision()
 
 
 def render_presenter_notes_tab() -> None:
@@ -3995,17 +4239,13 @@ def _render_benchmark_panels(metrics: dict[str, Any]) -> None:
 def render_demo_mode_page(strategy: str, top_k: int) -> None:
     inject_demo_medical_css()
     metrics = load_demo_metrics()
-    live_tab, architecture_tab, evaluation_tab, roadmap_tab, notes_tab = st.tabs(
-        ["Live Demo", "Architecture Details", "Evaluation Details", "Production Roadmap", "Presenter Notes"]
+    live_tab, evaluation_tab, roadmap_tab = st.tabs(
+        ["Live Demo", "Evaluation Details", "Production Roadmap"]
     )
     with live_tab:
         render_command_center_dashboard(metrics)
         render_demo_console(strategy, top_k)
-    with architecture_tab:
-        render_architecture_details_tab()
     with evaluation_tab:
         render_evaluation_details_tab()
     with roadmap_tab:
         render_production_roadmap_tab()
-    with notes_tab:
-        render_presenter_notes_tab()

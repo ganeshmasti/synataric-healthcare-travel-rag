@@ -179,21 +179,23 @@ def test_command_center_dashboard_data_contains_figma_pipeline_nodes():
 
     assert [node["title"] for node in data["pipeline_nodes"]] == [
         "Corpus",
-        "RAG Evidence",
+        "Chunking",
+        "Embeddings",
+        "Pinecone RAG",
+        "FlashRank",
         "MINT Router",
-        "Agent Tools",
         "Bounded ReAct",
-        "Grounded Plan",
-        "Safety / HITL",
+        "Trust Layer",
     ]
     assert [node["subtitle"] for node in data["pipeline_nodes"]] == [
         "Medical KB",
-        "Retrieval",
-        "Orchestration",
-        "4 bound tools",
-        "Reasoning loop",
-        "Structured output",
-        "Evals",
+        "Fixed + Semantic",
+        "OpenAI vectors",
+        "Vector search",
+        "Local rerank",
+        "Lightest path",
+        "Reason → Act",
+        "Safety + HITL",
     ]
 
 
@@ -203,6 +205,8 @@ def test_command_center_dashboard_data_contains_figma_kpis_and_workflow():
 
     for value in ["0.8810", "0.8283", "1.000", "0.555", "0.340s", "2.308s"]:
         assert value in text
+    for label in ["+5.27 pts", "+44.5 pts", "~6.8× faster", "Unsafe medical requests refused"]:
+        assert label in text
     for tool in ["provider_search_tool", "cost_estimate_tool", "recovery_guidance_tool", "risk_checklist_tool"]:
         assert tool in text
 
@@ -233,11 +237,11 @@ def test_workflow_trace_uses_navigator_trace_label():
 
 def test_command_center_component_summary_contains_required_backend_components():
     rows = get_component_summary_rows()
-    component_names = {row["component"] for row in rows}
+    component_names = {row["Component"] for row in rows}
 
     for component in [
-        "retrieval",
-        "reranking",
+        "retriever",
+        "reranker",
         "rag_chain",
         "agent_intents",
         "agent_tools",
@@ -245,11 +249,18 @@ def test_command_center_component_summary_contains_required_backend_components()
         "react_care_agent",
     ]:
         assert component in component_names
+    assert all("Call Profile" in row for row in rows)
+    summary_text = str(rows)
+    for phrase in ["Deterministic", "Embedding API", "Vector search", "Local rerank", "Answer generation", "Intent classification", "Tool-dependent RAG", "Bounded ReAct loop"]:
+        assert phrase in summary_text
 
 
 def test_command_center_metric_cards_contain_required_numbers():
     cards = get_metric_cards(load_demo_metrics())
-    text = " ".join(f"{card['title']} {card['value']} {card['caption']}" for card in cards)
+    text = " ".join(
+        f"{card['title']} {card['value']} {card.get('previous', '')} {card['caption']} {card['delta']} {card.get('subtext', '')}"
+        for card in cards
+    )
 
     assert len(cards) == 4
     for value in ["0.8810", "0.8283", "1.000", "0.555", "2.308", "0.340"]:

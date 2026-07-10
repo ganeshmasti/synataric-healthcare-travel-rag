@@ -1634,56 +1634,7 @@ def render_ask_page(strategy: str, top_k: int) -> None:
 
 inject_css()
 _init_state()
-
-with st.sidebar:
-    st.title("Synataric Navigator")
-    show_technical_tabs = st.checkbox(
-        "Show technical details",
-        value=False,
-        help="Reveal diagnostics, evaluation, and chunking comparison pages.",
-    )
-    page_options = ["Ask Navigator", "Agent Navigator", "ReAct Care Planner", "Demo Mode", "Find Evidence"]
-    if show_technical_tabs:
-        page_options.extend(["RAG Diagnostics", "Evaluation Dashboard", "Chunk Strategy Comparison"])
-    page = st.radio(
-        "Page",
-        page_options,
-    )
-    st.divider()
-    st.caption(get_langsmith_status())
-    strategy = st.selectbox(
-        "Chunking Strategy",
-        ["semantic", "fixed"],
-        index=0,
-        format_func=lambda value: "Semantic chunks" if value == "semantic" else "Fixed chunks",
-        help="Choose which Pinecone namespace to search.",
-    )
-    top_k = st.slider(
-        "Retrieved candidates",
-        min_value=3,
-        max_value=20,
-        value=10,
-        step=1,
-        help="Number of Pinecone matches sent to FlashRank for reranking.",
-    )
-    st.info("Healthcare navigation education only. Not medical advice.")
-
-if page == "Ask Navigator":
-    render_ask_page(strategy, top_k)
-elif page == "Agent Navigator":
-    render_agent_page(strategy, top_k)
-elif page == "ReAct Care Planner":
-    render_react_care_planner_page(strategy, top_k)
-elif page == "Demo Mode":
-    render_demo_mode_page(strategy, top_k)
-elif page == "Find Evidence":
-    render_find_evidence_page(strategy, top_k)
-elif page == "RAG Diagnostics":
-    render_diagnostics_page(strategy, top_k)
-elif page == "Evaluation Dashboard":
-    render_evaluation_dashboard(strategy, top_k)
-elif page == "Chunk Strategy Comparison":
-    render_chunk_strategy_comparison(top_k)
+render_demo_mode_page("semantic", 10)
 
 st.divider()
 st.caption(

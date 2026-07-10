@@ -25,6 +25,7 @@ from src.agent_tools import (
     run_travel_planning,
 )
 from src.config import configure_langsmith, load_settings, traceable
+from src.corpus_scope import build_coverage_gap_response, evaluate_corpus_scope
 from src.agent_intents import detect_procedure, detect_unsafe_medical
 from src.output_sanitizer import sanitize_result_dict, sanitize_sources, sanitize_text
 
@@ -558,6 +559,23 @@ def run_react_care_agent(
     max_steps: int = 5,
     thread_id: str = "synataric-react-demo",
 ) -> dict:
+    corpus_scope = evaluate_corpus_scope(question)
+    if corpus_scope.status == "coverage_gap":
+        response = build_coverage_gap_response(corpus_scope)
+        return sanitize_result_dict(
+            {
+                **response,
+                "question": question,
+                "final_answer": response["answer"],
+                "step_count": 0,
+                "max_steps": max_steps,
+                "tool_calls": [],
+                "observations": [],
+                "errors": [],
+                "execution_log": ["Corpus coverage checked before ReAct tool execution."],
+            }
+        )
+
     configure_langsmith()
     settings = load_settings()
     graph = build_react_care_graph()
