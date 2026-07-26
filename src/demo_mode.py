@@ -1072,7 +1072,9 @@ def _kpi_icon_svg(title: str) -> str:
     paths = {
         "Agent Eval": '<path d="M3 12h3l2-7 4 14 3-10 2 5h4"/>',
         "Router": '<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="18" cy="14" r="2"/><path d="M8 18h2a4 4 0 0 0 4-4V8a2 2 0 0 1 2-2"/><path d="M14 14h2"/>',
+        "Router Accuracy": '<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="18" cy="14" r="2"/><path d="M8 18h2a4 4 0 0 0 4-4V8a2 2 0 0 1 2-2"/><path d="M14 14h2"/>',
         "Latency": '<path d="m13 2-8 11h7l-1 9 8-11h-7l1-9Z"/>',
+        "Routing Latency": '<path d="m13 2-8 11h7l-1 9 8-11h-7l1-9Z"/>',
         "Safety": '<path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/>',
     }
     path = paths.get(title, "")
