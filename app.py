@@ -13,7 +13,12 @@ from src.graph import run_synataric_graph
 from src.loaders import load_documents
 from src.rag_chain import build_sources_referenced
 from src.sample_data import create_sample_corpus
-from src.demo_mode import render_demo_mode_page
+from src.demo_mode import (
+    DEMO_SCENARIOS,
+    _run_live_demo,
+    render_command_center_run_output,
+    render_demo_mode_page,
+)
 
 try:
     from src.agent_session import (
@@ -1632,12 +1637,279 @@ def render_ask_page(strategy: str, top_k: int) -> None:
     render_reranking_results(result)
 
 
+def render_landing_page() -> None:
+    st.markdown(
+        """
+        <style>
+        [data-testid="stAppViewContainer"] {
+            background: #ffffff !important;
+        }
+        [data-testid="stHeader"] {
+            display: none;
+        }
+        .main .block-container {
+            max-width: 1280px;
+            padding: 0 24px 48px;
+        }
+        .syn-landing-nav {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            height: 80px;
+            color: #10213d;
+            font-size: 20px;
+            font-weight: 800;
+        }
+        .syn-landing-logo {
+            display: grid;
+            place-items: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #117ead;
+            color: #ffffff;
+            font-size: 23px;
+        }
+        .syn-landing-rule {
+            height: 1px;
+            margin: 0 -24px;
+            background: #e7edf4;
+        }
+        .syn-landing-hero {
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: 4px 0 0;
+            text-align: center;
+        }
+        .syn-landing-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            margin-top: 0;
+            padding: 8px 18px;
+            border: 1px solid #abd1ff;
+            border-radius: 999px;
+            background: #eef6ff;
+            color: #045ca0;
+            font: 800 14px ui-monospace, SFMono-Regular, Menlo, monospace;
+            letter-spacing: .05em;
+        }
+        .syn-landing-hero h1 {
+            max-width: 980px;
+            margin: 48px auto 28px;
+            color: #0d2040;
+            font-size: clamp(43px, 4.9vw, 61px);
+            line-height: 1.13;
+            letter-spacing: -.045em;
+        }
+        .syn-landing-hero p {
+            max-width: 880px;
+            margin: 0 auto;
+            color: #4e7098;
+            font-size: 25px;
+            line-height: 1.62;
+        }
+        .syn-landing-note {
+            margin-top: 28px;
+            margin-bottom: 48px;
+            color: #6f88aa;
+            font-size: 16px;
+            text-align: center;
+        }
+        div[data-testid="stButton"] > button[kind="primary"] {
+            min-height: 60px;
+            border: 0;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #0877b6, #0799b4);
+            box-shadow: 0 10px 24px rgba(8, 122, 177, .24);
+            font-size: 19px;
+            font-weight: 800;
+        }
+        div[data-testid="stButton"] > button[kind="secondary"] {
+            min-height: 60px;
+            border: 1px solid #acd2ff;
+            border-radius: 18px;
+            background: #eef6ff;
+            color: #0565a2;
+            font-size: 19px;
+            font-weight: 800;
+        }
+        @media (max-width: 760px) {
+            .syn-landing-hero h1 { margin-top: 30px; font-size: 42px; }
+            .syn-landing-hero p { font-size: 20px; }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    brand_col, technical_col = st.columns([0.78, 0.22], vertical_alignment="center")
+    with brand_col:
+        st.markdown(
+            '<div class="syn-landing-nav"><span class="syn-landing-logo">◎</span><span>Synataric</span></div>',
+            unsafe_allow_html=True,
+        )
+    with technical_col:
+        if st.button("How it works", type="tertiary", use_container_width=True):
+            st.session_state.synataric_view = "technical"
+            st.query_params["view"] = "technical"
+            st.rerun()
+
+    st.markdown('<div class="syn-landing-rule"></div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <section class="syn-landing-hero">
+          <div class="syn-landing-badge">♧ EDUCATIONAL NAVIGATION ONLY</div>
+          <h1>Plan medical care away from home.</h1>
+          <p>Enter a procedure and destination. Synataric creates a sourced care-navigation plan covering provider options, estimated costs, travel, recovery, risks, and questions for your care team.</p>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    left_space, demo_col, example_col, right_space = st.columns([0.8, 2.2, 1.9, 0.8])
+    with demo_col:
+        try_demo = st.button("▷  Try the Bangalore cataract demo", type="primary", use_container_width=True)
+    with example_col:
+        view_example = st.button("▤  View an example plan", use_container_width=True)
+
+    if try_demo or view_example:
+        scenario_name = "Multi-step care plan"
+        st.session_state.demo_mode_scenario = scenario_name
+        st.session_state.demo_mode_question = (
+            "What are the best providers for cataract surgery in Bangalore, India? Include cost estimates in USD, "
+            "recovery time, what to arrange for travel, and the most important questions to ask before booking."
+        )
+        st.session_state.synataric_view = "demo"
+        st.query_params["view"] = "demo"
+        st.rerun()
+
+    st.markdown(
+        '<div class="syn-landing-note">Working prototype using illustrative data. Educational navigation only—not medical advice, booking, or live provider availability.</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_consumer_demo_page() -> None:
+    st.markdown(
+        """
+        <style>
+        [data-testid="stAppViewContainer"] { background: #f2f7fd !important; }
+        [data-testid="stHeader"] { display: none; }
+        .main .block-container { max-width: 1060px; padding: 50px 24px 60px; }
+        .syn-consumer-demo-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 8px 0 22px;
+            color: #0067a5;
+            font: 800 16px ui-monospace, SFMono-Regular, Menlo, monospace;
+            letter-spacing: .03em;
+        }
+        .syn-consumer-demo-pin {
+            display: grid;
+            place-items: center;
+            width: 29px;
+            height: 29px;
+            border-radius: 8px;
+            background: #deeffb;
+        }
+        .syn-consumer-question {
+            padding: 28px;
+            border: 1px solid #dbe3ec;
+            border-radius: 22px;
+            background: #ffffff;
+            box-shadow: 0 3px 8px rgba(19, 48, 78, .06);
+        }
+        .syn-consumer-question small {
+            display: block;
+            margin-bottom: 15px;
+            color: #95a9c6;
+            font: 800 14px ui-monospace, SFMono-Regular, Menlo, monospace;
+        }
+        .syn-consumer-question p {
+            margin: 0;
+            color: #071a39;
+            font-size: 20px;
+            line-height: 1.6;
+        }
+        .syn-consumer-run { height: 8px; }
+        div[data-testid="stButton"] > button[kind="primary"] {
+            min-height: 66px;
+            border: 0;
+            border-radius: 17px;
+            background: linear-gradient(100deg, #1477ac, #1599b2);
+            box-shadow: none;
+            font-size: 20px;
+            font-weight: 800;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    back_col, technical_col = st.columns([0.78, 0.22])
+    with back_col:
+        if st.button("← Synataric", type="tertiary"):
+            st.session_state.synataric_view = "landing"
+            st.query_params.clear()
+            st.rerun()
+    with technical_col:
+        if st.button("How it works", type="tertiary", use_container_width=True):
+            st.session_state.synataric_view = "technical"
+            st.query_params["view"] = "technical"
+            st.rerun()
+
+    question = (
+        "What are the best providers for cataract surgery in Bangalore, India? Include cost estimates in USD, "
+        "recovery time, what to arrange for travel, and the most important questions to ask before booking."
+    )
+    st.markdown(
+        f"""
+        <div class="syn-consumer-demo-label"><span class="syn-consumer-demo-pin">⌖</span>BANGALORE&nbsp; · &nbsp;CATARACT SURGERY DEMO</div>
+        <section class="syn-consumer-question">
+          <small>YOUR QUESTION</small>
+          <p>{escape_html(question)}</p>
+        </section>
+        <div class="syn-consumer-run"></div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if st.button("▷  Run Navigator", type="primary", use_container_width=True):
+        scenario = DEMO_SCENARIOS["Multi-step care plan"]
+        with st.status("Building your sourced care plan...", expanded=False):
+            result, latency, error = _run_live_demo(question, scenario, "semantic", 10)
+        st.session_state.demo_mode_scenario = "Multi-step care plan"
+        st.session_state.demo_mode_question = question
+        st.session_state.demo_mode_result = result
+        st.session_state.demo_mode_latency = latency
+        st.session_state.demo_mode_error = error
+        st.session_state.demo_mode_expected_route = scenario["expected_route"]
+
+    render_command_center_run_output()
+
+
 inject_css()
 _init_state()
-render_demo_mode_page("semantic", 10)
+requested_view = st.query_params.get("view")
+if requested_view in {"demo", "technical"}:
+    st.session_state.synataric_view = requested_view
+elif "synataric_view" not in st.session_state:
+    st.session_state.synataric_view = "landing"
 
-st.divider()
-st.caption(
-    "Synataric Navigator does not diagnose, prescribe treatment, or replace licensed clinicians. "
-    "For urgent symptoms or emergencies, seek immediate medical care."
-)
+if st.session_state.synataric_view == "technical":
+    if st.button("← Back to Synataric", type="tertiary"):
+        st.session_state.synataric_view = "landing"
+        st.query_params.clear()
+        st.rerun()
+    render_demo_mode_page("semantic", 10)
+    st.divider()
+    st.caption(
+        "Synataric Navigator does not diagnose, prescribe treatment, or replace licensed clinicians. "
+        "For urgent symptoms or emergencies, seek immediate medical care."
+    )
+elif st.session_state.synataric_view == "demo":
+    render_consumer_demo_page()
+else:
+    render_landing_page()
