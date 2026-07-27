@@ -1716,23 +1716,44 @@ def render_landing_page() -> None:
             font-size: 16px;
             text-align: center;
         }
+        div[data-testid="stButton"] > button[kind="tertiary"] {
+            justify-content: center;
+            min-height: auto;
+            padding: 8px 0;
+            border: 0 !important;
+            background: transparent !important;
+            color: #6f88aa !important;
+            box-shadow: none;
+            font-size: 15px;
+            font-weight: 600;
+        }
+        div[data-testid="stButton"] > button[kind="tertiary"] * {
+            color: #6f88aa !important;
+        }
         div[data-testid="stButton"] > button[kind="primary"] {
             min-height: 60px;
-            border: 0;
+            border: 0 !important;
             border-radius: 18px;
-            background: linear-gradient(135deg, #0877b6, #0799b4);
+            background: #087fa8 !important;
+            color: #ffffff !important;
             box-shadow: 0 10px 24px rgba(8, 122, 177, .24);
             font-size: 19px;
             font-weight: 800;
         }
+        div[data-testid="stButton"] > button[kind="primary"] * {
+            color: #ffffff !important;
+        }
         div[data-testid="stButton"] > button[kind="secondary"] {
             min-height: 60px;
-            border: 1px solid #acd2ff;
+            border: 1px solid #7ebcff !important;
             border-radius: 18px;
-            background: #eef6ff;
-            color: #0565a2;
+            background: #ffffff !important;
+            color: #0565a2 !important;
             font-size: 19px;
             font-weight: 800;
+        }
+        div[data-testid="stButton"] > button[kind="secondary"] * {
+            color: #0565a2 !important;
         }
         @media (max-width: 760px) {
             .syn-landing-hero h1 { margin-top: 30px; font-size: 42px; }
@@ -1750,7 +1771,7 @@ def render_landing_page() -> None:
             unsafe_allow_html=True,
         )
     with technical_col:
-        if st.button("How it works", type="tertiary", use_container_width=True):
+        if st.button("How it works →", type="tertiary", use_container_width=True):
             st.session_state.synataric_view = "technical"
             st.query_params["view"] = "technical"
             st.rerun()
@@ -1759,7 +1780,7 @@ def render_landing_page() -> None:
     st.markdown(
         """
         <section class="syn-landing-hero">
-          <div class="syn-landing-badge">♧ EDUCATIONAL NAVIGATION ONLY</div>
+          <div class="syn-landing-badge">AI-POWERED CARE NAVIGATION</div>
           <h1>Plan medical care away from home.</h1>
           <p>Enter a procedure and destination. Synataric creates a sourced care-navigation plan covering provider options, estimated costs, travel, recovery, risks, and questions for your care team.</p>
         </section>
@@ -1834,14 +1855,32 @@ def render_consumer_demo_page() -> None:
             line-height: 1.6;
         }
         .syn-consumer-run { height: 8px; }
+        div[data-testid="stButton"] > button[kind="tertiary"] {
+            justify-content: center;
+            min-height: auto;
+            padding: 8px 0;
+            border: 0 !important;
+            background: transparent !important;
+            color: #6f88aa !important;
+            box-shadow: none;
+            font-size: 15px;
+            font-weight: 600;
+        }
+        div[data-testid="stButton"] > button[kind="tertiary"] * {
+            color: #6f88aa !important;
+        }
         div[data-testid="stButton"] > button[kind="primary"] {
             min-height: 66px;
-            border: 0;
+            border: 0 !important;
             border-radius: 17px;
-            background: linear-gradient(100deg, #1477ac, #1599b2);
+            background: linear-gradient(100deg, #1477ac, #1599b2) !important;
+            color: #ffffff !important;
             box-shadow: none;
             font-size: 20px;
             font-weight: 800;
+        }
+        div[data-testid="stButton"] > button[kind="primary"] * {
+            color: #ffffff !important;
         }
         </style>
         """,
@@ -1855,7 +1894,7 @@ def render_consumer_demo_page() -> None:
             st.query_params.clear()
             st.rerun()
     with technical_col:
-        if st.button("How it works", type="tertiary", use_container_width=True):
+        if st.button("How it works →", type="tertiary", use_container_width=True):
             st.session_state.synataric_view = "technical"
             st.query_params["view"] = "technical"
             st.rerun()
