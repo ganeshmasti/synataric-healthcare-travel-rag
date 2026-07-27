@@ -13,3 +13,4 @@ flashrank>=0.2.9
 datasets>=2.19.0
 ragas>=0.1.21
 pytest>=8.0.0
+pip-system-certs
