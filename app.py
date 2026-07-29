@@ -1771,7 +1771,7 @@ def render_landing_page() -> None:
             unsafe_allow_html=True,
         )
     with technical_col:
-        if st.button("How it works →", type="tertiary", use_container_width=True):
+        if st.button("How It Works & Product Vision →", type="tertiary", use_container_width=True):
             st.session_state.synataric_view = "technical"
             st.query_params["view"] = "technical"
             st.rerun()
@@ -1894,7 +1894,7 @@ def render_consumer_demo_page() -> None:
             st.query_params.clear()
             st.rerun()
     with technical_col:
-        if st.button("How it works →", type="tertiary", use_container_width=True):
+        if st.button("How It Works & Product Vision →", type="tertiary", use_container_width=True):
             st.session_state.synataric_view = "technical"
             st.query_params["view"] = "technical"
             st.rerun()
