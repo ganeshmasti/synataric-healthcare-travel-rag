@@ -2,6 +2,44 @@ modules = ["python-3.12"]
 
 [nix]
 channel = "stable-25_05"
+packages = ["glibcLocales"]
 
 [agent]
 expertMode = true
+
+[userenv]
+
+[userenv.shared]
+LANGCHAIN_PROJECT = "Synataric-Navigator"
+LANGCHAIN_TRACING_V2 = "false"
+PINECONE_CLOUD = "aws"
+PINECONE_INDEX_NAME = "Synataric Healthcare Travel Care Planning RAG"
+PINECONE_REGION = "us-east-1"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "streamlit run app.py"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
