@@ -1779,8 +1779,8 @@ def build_care_plan_cards(fields: dict[str, Any], evidence: list[dict[str, Any]]
             {
                 "title": "Estimated Cost",
                 "items": [
-                    "INR 45,000 - INR 150,000",
-                    "Factors: lens choice, diagnostics, surgeon fee, facility type",
+                    "INR 45,000 – 150,000  (~USD 540 – 1,800)",
+                    "Illustrative rate only — exchange rates change. Factors: lens choice, diagnostics, surgeon fee, facility type",
                 ],
             },
             {
