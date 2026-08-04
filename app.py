@@ -1706,8 +1706,6 @@ def render_landing_page() -> None:
     st.markdown(
         """
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700;800&display=swap');
-
         [data-testid="stAppViewContainer"] {
             background: #F7F2E7 !important;
         }
@@ -1937,8 +1935,6 @@ def render_consumer_demo_page() -> None:
     st.markdown(
         """
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700;800&display=swap');
-
         [data-testid="stAppViewContainer"] { background: #F7F2E7 !important; }
         [data-testid="stHeader"] { display: none; }
         .main .block-container { max-width: 1060px; padding: 40px 24px 60px; }
