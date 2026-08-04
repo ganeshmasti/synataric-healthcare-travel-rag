@@ -1,0 +1,1 @@
+- [INR/USD cost display defect](inr-usd-defect.md) — costs shown in INR only; USD equivalent missing despite "vs the US" sample questions
