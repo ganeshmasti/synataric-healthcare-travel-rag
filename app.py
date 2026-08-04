@@ -1907,12 +1907,14 @@ def render_landing_page() -> None:
     st.markdown('</div>', unsafe_allow_html=True)
 
     if try_demo or view_example or clicked_question:
-        scenario_name = "Multi-step care plan"
-        st.session_state.demo_mode_scenario = scenario_name
+        st.session_state.demo_mode_scenario = "Multi-step care plan"
         st.session_state.demo_mode_question = clicked_question if clicked_question else (
             "What are the best providers for cataract surgery in Bangalore, India? Include cost estimates in USD, "
             "recovery time, what to arrange for travel, and the most important questions to ask before booking."
         )
+        # Auto-run the demo immediately when a specific question was clicked
+        if clicked_question:
+            st.session_state.demo_mode_auto_run = True
         st.session_state.synataric_view = "demo"
         st.query_params["view"] = "demo"
         st.rerun()
@@ -2022,13 +2024,17 @@ def render_consumer_demo_page() -> None:
             st.query_params["view"] = "technical"
             st.rerun()
 
-    question = (
+    default_question = (
         "What are the best providers for cataract surgery in Bangalore, India? Include cost estimates in USD, "
         "recovery time, what to arrange for travel, and the most important questions to ask before booking."
     )
+    question = st.session_state.get("demo_mode_question") or default_question
+    is_bangalore_cataract = "cataract" in question.lower() and "bangalore" in question.lower()
+    demo_label = "BANGALORE&nbsp; · &nbsp;CATARACT SURGERY DEMO" if is_bangalore_cataract else "INTERACTIVE DEMO"
+
     st.markdown(
         f"""
-        <div class="syn-consumer-demo-label"><span class="syn-consumer-demo-pin">⌖</span>BANGALORE&nbsp; · &nbsp;CATARACT SURGERY DEMO</div>
+        <div class="syn-consumer-demo-label"><span class="syn-consumer-demo-pin">⌖</span>{demo_label}</div>
         <section class="syn-consumer-question">
           <small>YOUR QUESTION</small>
           <p>{escape_html(question)}</p>
@@ -2038,7 +2044,10 @@ def render_consumer_demo_page() -> None:
         unsafe_allow_html=True,
     )
 
-    if st.button("▷  Run Navigator", type="primary", use_container_width=True):
+    # Auto-run when arriving from a landing-page example question click
+    auto_run = st.session_state.pop("demo_mode_auto_run", False)
+
+    if auto_run or st.button("▷  Run Navigator", type="primary", use_container_width=True):
         scenario = DEMO_SCENARIOS["Multi-step care plan"]
         with st.status("Checking our care-planning sources…", expanded=False):
             result, latency, error = _run_live_demo(question, scenario, "semantic", 10)
