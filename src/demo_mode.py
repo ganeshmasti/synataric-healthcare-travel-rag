@@ -1656,8 +1656,8 @@ def get_route_specific_result_cards(route_key: str) -> list[dict[str, Any]]:
             {
                 "title": "Estimated Cost",
                 "items": [
-                    "INR 45,000 - INR 150,000",
-                    "Factors: lens choice, diagnostics, surgeon fees, facility type",
+                    "INR 45,000 – 150,000  (~USD 540 – 1,800)",
+                    "Illustrative rate only — exchange rates change. Factors: lens choice, diagnostics, surgeon fees, facility type",
                 ],
             },
             {
@@ -1697,7 +1697,7 @@ def get_route_specific_result_cards(route_key: str) -> list[dict[str, Any]]:
         ]
     if route == "cost_estimate":
         return [
-            {"title": "Cost Range", "items": ["INR 45,000 - INR 150,000"]},
+            {"title": "Cost Range", "items": ["INR 45,000 – 150,000  (~USD 540 – 1,800)", "Illustrative rate only — exchange rates change"]},
             {"title": "Cost Drivers", "items": ["lens choice", "diagnostics", "surgeon fee", "facility type"]},
             {"title": "Evidence", "items": ["india_procedure_costs.csv"]},
             {"title": "Related Providers", "items": ["Bangalore Eye Centre", "Sankara Eye Services"]},
