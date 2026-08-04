@@ -18,6 +18,14 @@ from src.demo_mode import (
     _run_live_demo,
     render_command_center_run_output,
     render_demo_mode_page,
+    extract_demo_result_fields,
+    extract_evidence,
+    extract_sources,
+    extract_tool_calls,
+    build_coverage_safe_care_plan_cards,
+    detect_coverage_gaps,
+    coverage_note_for_gaps,
+    sanitize_demo_text,
 )
 
 try:
@@ -1931,6 +1939,145 @@ def render_landing_page() -> None:
     )
 
 
+def render_consumer_result() -> None:
+    """Consumer-facing result renderer — clean cards, no technical metrics."""
+    result = st.session_state.get("demo_mode_result")
+    if not result:
+        return
+
+    expected_route = st.session_state.get("demo_mode_expected_route", "N/A")
+    latency = st.session_state.get("demo_mode_latency", 0.0)
+    question = st.session_state.get("demo_mode_question", "")
+
+    fields = extract_demo_result_fields(result, expected_route, latency)
+    fields["user_question"] = sanitize_demo_text(question or fields.get("user_question", ""))
+
+    evidence = extract_evidence(result)
+    sources = extract_sources(result)
+    tool_calls_data = extract_tool_calls(result)
+
+    coverage_gaps = detect_coverage_gaps(fields["user_question"], evidence, sources, result=result)
+    cards = build_coverage_safe_care_plan_cards(fields, evidence, sources, coverage_gaps)
+
+    if not cards:
+        return
+
+    # ── card styles ──────────────────────────────────────────────────────────
+    st.markdown(
+        """
+        <style>
+        .syn-plan-heading {
+            display: flex; align-items: center; gap: 12px;
+            margin: 32px 0 20px;
+        }
+        .syn-plan-heading-bar {
+            width: 4px; height: 32px; background: #58C4BC; border-radius: 3px; flex-shrink: 0;
+        }
+        .syn-plan-heading h2 {
+            margin: 0; color: #163F3D;
+            font: 700 1.45rem 'Playfair Display', Georgia, serif;
+        }
+        .syn-result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 680px) { .syn-result-grid { grid-template-columns: 1fr; } }
+        .syn-rc {
+            background: #fff;
+            border: 1px solid #DDE7E2;
+            border-radius: 16px;
+            padding: 20px 22px 18px;
+            box-shadow: 0 2px 8px rgba(7,63,59,.05);
+        }
+        .syn-rc-title {
+            font: 700 0.78rem 'Inter', sans-serif;
+            letter-spacing: .07em;
+            text-transform: uppercase;
+            color: #58C4BC;
+            margin-bottom: 10px;
+        }
+        .syn-rc ul {
+            margin: 0; padding: 0 0 0 18px;
+            color: #163F3D;
+            font: 400 0.94rem/1.6 'Inter', sans-serif;
+        }
+        .syn-rc ul li { margin-bottom: 4px; }
+        .syn-result-disclaimer {
+            background: #FFF8E8;
+            border: 1px solid #F4C542;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font: 400 0.82rem/1.5 'Inter', sans-serif;
+            color: #5A4A00;
+            margin-top: 8px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # ── heading ───────────────────────────────────────────────────────────────
+    st.markdown(
+        '<div class="syn-plan-heading">'
+        '<div class="syn-plan-heading-bar"></div>'
+        '<h2>Your care navigation plan</h2>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    coverage_note = coverage_note_for_gaps(coverage_gaps)
+    if coverage_note:
+        st.warning(coverage_note)
+
+    # ── cards ─────────────────────────────────────────────────────────────────
+    card_html_parts = []
+    for card in cards:
+        title = escape_html(sanitize_demo_text(card.get("title", "")))
+        items = [sanitize_demo_text(i) for i in card.get("items", []) if sanitize_demo_text(i)]
+        items_html = "".join(f"<li>{escape_html(item)}</li>" for item in items)
+        card_html_parts.append(
+            f'<div class="syn-rc">'
+            f'<div class="syn-rc-title">{title}</div>'
+            f'<ul>{items_html}</ul>'
+            f'</div>'
+        )
+
+    st.markdown(
+        f'<div class="syn-result-grid">{"".join(card_html_parts)}</div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── disclaimer ────────────────────────────────────────────────────────────
+    st.markdown(
+        '<div class="syn-result-disclaimer">'
+        '⚠️ <strong>Illustrative data only.</strong> '
+        'This is educational care navigation — not medical advice, diagnosis, or treatment guidance. '
+        'Exchange rates are illustrative and change over time. '
+        'For urgent symptoms, seek immediate care.'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── collapsed technical trace ─────────────────────────────────────────────
+    with st.expander("Technical details", expanded=False):
+        st.caption(
+            f"Status: {fields['status']} · Route: {fields['actual_route']} · "
+            f"Tool calls: {fields['tool_call_count']} · Latency: {fields['runtime_latency']} · "
+            f"Safety: {fields['safety_status']} · Evidence: {len(evidence or sources)}"
+        )
+        if tool_calls_data:
+            st.markdown("**Tool calls**")
+            st.dataframe(pd.DataFrame(tool_calls_data), use_container_width=True, hide_index=True)
+        rows = evidence or sources
+        if rows:
+            st.markdown("**Evidence**")
+            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+        else:
+            st.info("No evidence needed for this route.")
+
+
 def render_consumer_demo_page() -> None:
     st.markdown(
         """
@@ -2054,7 +2201,7 @@ def render_consumer_demo_page() -> None:
         st.session_state.demo_mode_error = error
         st.session_state.demo_mode_expected_route = scenario["expected_route"]
 
-    render_command_center_run_output()
+    render_consumer_result()
 
 
 inject_css()

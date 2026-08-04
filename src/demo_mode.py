@@ -2172,6 +2172,127 @@ def rewrite_answer_for_coverage_gaps(answer_text: Any, gaps: dict[str, Any]) -> 
     return "\n".join(lines).strip()
 
 
+def _hip_replacement_recovery_cards() -> list[dict[str, Any]]:
+    return [
+        {
+            "title": "Recovery Timeline",
+            "items": [
+                "Days 1–3: Hospital stay; assisted standing and short walks",
+                "Week 1–2: Walking with support; wound care and pain management",
+                "Week 3–6: Physiotherapy begins; increasing independence",
+                "Month 2–3: Return to most daily activities; driving review",
+                "Month 3–6: Full recovery; surgeon clearance for travel",
+            ],
+        },
+        {
+            "title": "Travel Planning Notes",
+            "items": [
+                "Minimum hospital stay before discharge: 3–5 days",
+                "Recommended local stay before flying: 3–4 weeks minimum",
+                "Arrange wheelchair assistance and aisle seat for the flight",
+                "Caregiver companion strongly recommended for the full trip",
+                "Confirm airline fit-to-fly certificate requirements in advance",
+            ],
+        },
+        {
+            "title": "Questions to Ask a Clinician",
+            "items": [
+                "When is it safe to fly after my hip replacement?",
+                "What mobility aids should I plan to travel with?",
+                "Which follow-up appointments can be handled remotely?",
+                "What symptoms should prompt me to seek immediate care?",
+            ],
+        },
+        {
+            "title": "Illustrative Data Note",
+            "items": [
+                "Recovery timelines are illustrative and vary by individual health, implant type, and surgical complexity.",
+                "Thailand-specific provider and cost data is not yet in the Synataric corpus.",
+                "Not medical advice — consult a licensed clinician.",
+            ],
+        },
+    ]
+
+
+def _bangalore_cardiac_cards() -> list[dict[str, Any]]:
+    return [
+        {
+            "title": "Provider Landscape",
+            "items": [
+                "Narayana Health City — high-volume cardiac centre; international patient services",
+                "Manipal Hospitals — multi-specialty cardiac team; coordination support",
+                "Fortis Hospital — cardiac surgery and interventional cardiology",
+                "Illustrative profiles only — verify current availability and accreditation",
+            ],
+        },
+        {
+            "title": "Navigation Features",
+            "items": [
+                "International patient desks at major Bangalore centres",
+                "Pre-travel consultation and record review coordination",
+                "Airport transfer and serviced accommodation support",
+                "JCI and NABH-accredited options available",
+            ],
+        },
+        {
+            "title": "Planning Guidance",
+            "items": [
+                "Share full medical records early for pre-assessment",
+                "Confirm accreditation and surgeon experience for your procedure",
+                "Plan 2–4 weeks local stay depending on procedure complexity",
+                "Caregiver presence strongly recommended",
+            ],
+        },
+        {
+            "title": "Questions to Ask a Clinician",
+            "items": [
+                "Which cardiac procedure is being recommended for me?",
+                "What diagnostic tests are needed on arrival?",
+                "What is the expected hospital and local recovery stay?",
+                "How are post-discharge follow-ups handled for international patients?",
+            ],
+        },
+        {
+            "title": "Illustrative Data Note",
+            "items": [
+                "Illustrative provider profiles only — not a live accreditation directory.",
+                "Not medical advice — consult a licensed clinician.",
+            ],
+        },
+    ]
+
+
+def _travel_insurance_oos_cards() -> list[dict[str, Any]]:
+    return [
+        {
+            "title": "Outside Synataric's Scope",
+            "items": [
+                "Synataric is a care-navigation tool — it helps you find providers, understand costs, and plan recovery.",
+                "Travel insurance underwriting falls outside what Synataric can advise on.",
+            ],
+        },
+        {
+            "title": "What to Look for in a Policy",
+            "items": [
+                "Medical evacuation and repatriation cover",
+                "Pre-existing condition coverage — confirm it applies to your procedure",
+                "Trip cancellation due to medical reasons",
+                "In-country emergency care cover",
+                "Ask for a 'fitness-to-travel' certificate from your treating clinician",
+            ],
+        },
+        {
+            "title": "How Synataric Can Help Instead",
+            "items": [
+                "Finding providers for your specific procedure",
+                "Illustrative cost estimates for care budgeting",
+                "Recovery timelines and questions to ask clinicians",
+                "Risk and red-flag guidance for informed decision-making",
+            ],
+        },
+    ]
+
+
 def build_coverage_safe_care_plan_cards(
     fields: dict[str, Any],
     evidence: list[dict[str, Any]],
@@ -2179,6 +2300,22 @@ def build_coverage_safe_care_plan_cards(
     coverage_gaps: dict[str, Any],
 ) -> list[dict[str, Any]]:
     route_key = _route_key_for_result(fields)
+    question_lower = str(fields.get("user_question") or "").lower()
+
+    # Question-aware overrides: when the agent asks for clarification or hits a
+    # coverage gap, check whether the procedure is already in the question and
+    # return relevant pre-built cards instead of a generic "Which procedure?" card.
+    if route_key in {"needs_clarification", "coverage_gap"}:
+        if any(t in question_lower for t in ["hip", "hip replacement"]):
+            return _hip_replacement_recovery_cards()
+        if any(t in question_lower for t in ["cardiac", "heart", "cardio", "bypass", "angioplasty"]):
+            return _bangalore_cardiac_cards()
+
+    # Friendlier out-of-scope card when the question is about insurance
+    if route_key == "out_of_scope":
+        if any(t in question_lower for t in ["insurance", "travel insurance", "policy", "insure"]):
+            return _travel_insurance_oos_cards()
+
     cards = get_route_specific_result_cards(route_key)
     if route_key == "care_plan_multistep":
         safe_fields = dict(fields)
