@@ -1,0 +1,15 @@
+1. Visual redesign — match the brand system:
+
+Colors: deep green #073F3B (primary/headers), cream #F7F2E7 (page background), white cards with border #DDE7E2, teal accent #58C4BC, gold accent #F4C542 (primary CTA buttons only), heading text #163F3D, muted text #76908D.
+Typography: serif font for headlines (e.g., Georgia or Playfair Display), clean sans-serif for body. Generous spacing, rounded corners (16px+) on cards and buttons.
+The hero should say what the Navigator does in one warm, human sentence — currently it reads like a spec. Suggested: "Ask anything about planning medical care away from home." Keep the "educational only — not medical advice" disclaimer visible but small.
+Make it mobile-friendly — most visitors will arrive from phones.
+Add a small banner or footer link: "Synataric is building a full care-coordination service — Join the Founding Family Pilot →" linking to https://synataric.ai. This is important: it's how Navigator users become pilot signups.
+2. Functionality improvements:
+
+First-time visitors shouldn't face an empty input box. Show 4–6 tappable example questions (e.g., "What does cataract surgery cost in Bangalore vs the US?", "What should I ask a hospital before booking a knee replacement?", "What documents does my mother need for surgery in India?"). Clicking one runs it immediately.
+Simplify the mode choice: "Ask Navigator" / "Agent Navigator" / "ReAct Care Planner" are internal names. Either pick the best mode automatically, or relabel them in plain language ("Quick answers" / "Guided planning") — a first-time visitor shouldn't need to understand the difference.
+Show a friendly loading state while answers generate ("Checking our care-planning sources…"), and a graceful message if something fails — never a raw error.
+Keep answer citations, but present them as a tidy "Sources" list under the answer rather than inline clutter.
+Make sure the sample-data disclaimer ("illustrative data only") is clear on every answer.
+Priority: visual match + example questions + the pilot link to synataric.ai first; the rest as time allows.

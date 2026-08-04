@@ -61,31 +61,29 @@ def inject_css() -> None:
     st.markdown(
         """
         <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;800&display=swap');
+
         :root {
-            --bg: #F8FAFC;
+            --bg: #F7F2E7;
             --card: #FFFFFF;
             --section: #FFFFFF;
-            --accent: #0F766E;
-            --cyan: #2563EB;
-            --coral: #0F766E;
-            --green: #16A34A;
-            --white: #0F172A;
-            --text2: #475569;
-            --muted: #64748B;
-            --border: #E2E8F0;
+            --accent: #073F3B;
+            --teal: #58C4BC;
+            --gold: #F4C542;
+            --heading: #163F3D;
+            --text2: #4A6360;
+            --muted: #76908D;
+            --border: #DDE7E2;
         }
 
         [data-testid="stAppViewContainer"] {
-            background:
-                radial-gradient(circle at 14% 0%, rgba(204, 251, 241, 0.55), transparent 30%),
-                radial-gradient(circle at 90% 5%, rgba(219, 234, 254, 0.55), transparent 26%),
-                linear-gradient(145deg, #F8FAFC, #F8FAFC 45%, #EEF6F8) !important;
+            background: #F7F2E7 !important;
         }
 
         [data-testid="stHeader"] { background: transparent; }
 
         [data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #FFFFFF, #F8FAFC);
+            background: linear-gradient(180deg, #FFFFFF, #F7F2E7);
             border-right: 1px solid var(--border);
         }
 
@@ -97,20 +95,24 @@ def inject_css() -> None:
             padding-bottom: 2rem;
         }
 
-        h1, h2, h3, h4, h5, h6, strong { color: var(--white) !important; }
-        p, li, span, label, div { color: var(--text2); }
+        h1, h2, h3 {
+            font-family: 'Playfair Display', Georgia, serif !important;
+            color: var(--heading) !important;
+        }
+        h4, h5, h6, strong { color: var(--heading) !important; }
+        p, li, span, label, div { color: var(--text2); font-family: 'Inter', sans-serif; }
 
         [data-testid="stVerticalBlockBorderWrapper"] {
             background: #FFFFFF !important;
             border: 1px solid var(--border) !important;
-            border-radius: 14px !important;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+            border-radius: 16px !important;
+            box-shadow: 0 4px 16px rgba(7, 63, 59, 0.07);
         }
 
         [data-testid="stMetric"] {
             background: #FFFFFF;
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 0.72rem;
         }
 
@@ -120,24 +122,26 @@ def inject_css() -> None:
         }
 
         [data-testid="stMetricValue"] {
-            color: var(--white) !important;
+            color: var(--heading) !important;
             font-size: 1.05rem !important;
         }
 
         .stButton > button {
-            border-radius: 10px !important;
-            border: 1px solid rgba(15, 118, 110, 0.12) !important;
-            background: linear-gradient(135deg, var(--coral), #14B8A6) !important;
+            border-radius: 16px !important;
+            border: none !important;
+            background: var(--teal) !important;
             color: white !important;
-            font-weight: 800 !important;
-            box-shadow: 0 10px 24px rgba(15, 118, 110, 0.18);
+            font-weight: 700 !important;
+            font-family: 'Inter', sans-serif !important;
+            box-shadow: 0 4px 14px rgba(88, 196, 188, 0.28);
         }
 
         .stTextArea textarea, .stTextInput input {
             background: #FFFFFF !important;
-            color: #0F172A !important;
-            border-radius: 10px !important;
+            color: var(--heading) !important;
+            border-radius: 16px !important;
             border: 1px solid var(--border) !important;
+            font-family: 'Inter', sans-serif !important;
         }
 
         [data-testid="stSidebar"] [data-baseweb="select"] > div,
@@ -170,15 +174,15 @@ def inject_css() -> None:
         [data-baseweb="menu"] li:hover,
         [role="option"]:hover,
         [aria-selected="true"] {
-            background-color: #CCFBF1 !important;
-            color: var(--white) !important;
+            background-color: #E6F7F6 !important;
+            color: var(--heading) !important;
         }
 
         [data-testid="stCheckbox"] label:hover,
         [data-testid="stCheckbox"] label:hover div,
         [data-testid="stCheckbox"] label:hover span {
             background-color: transparent !important;
-            color: var(--white) !important;
+            color: var(--heading) !important;
         }
 
         [data-testid="stTooltipContent"],
@@ -191,14 +195,14 @@ def inject_css() -> None:
 
         [data-testid="stDataFrame"] {
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 16px;
             overflow: hidden;
         }
 
         [data-testid="stExpander"] {
             background: #FFFFFF;
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 16px;
         }
 
         .syn-header {
@@ -210,10 +214,10 @@ def inject_css() -> None:
         }
 
         .syn-title-block, .syn-feature, .syn-stage-card {
-            background: linear-gradient(145deg, #FFFFFF, #F8FAFC);
+            background: #FFFFFF;
             border: 1px solid var(--border);
-            border-radius: 14px;
-            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(7, 63, 59, 0.07);
         }
 
         .syn-title-block {
@@ -221,18 +225,19 @@ def inject_css() -> None:
         }
 
         .syn-kicker {
-            color: var(--cyan);
+            color: var(--teal);
             font-size: 0.78rem;
-            font-weight: 900;
+            font-weight: 800;
             letter-spacing: 0.12em;
             text-transform: uppercase;
         }
 
         .syn-title {
-            color: var(--white);
+            color: var(--heading);
+            font-family: 'Playfair Display', Georgia, serif;
             font-size: clamp(1.8rem, 3vw, 2.7rem);
             line-height: 1.05;
-            font-weight: 950;
+            font-weight: 900;
             margin-top: 4px;
         }
 
@@ -255,7 +260,7 @@ def inject_css() -> None:
 
         .syn-feature h4 {
             margin: 0;
-            color: var(--white);
+            color: var(--heading);
             font-size: 0.93rem;
         }
 
@@ -271,12 +276,12 @@ def inject_css() -> None:
             min-height: 126px;
         }
 
-        .syn-stage-card.pending { border-color: #E2E8F0; }
+        .syn-stage-card.pending { border-color: var(--border); }
         .syn-stage-card.running {
-            border-color: var(--cyan);
-            box-shadow: 0 0 20px rgba(37, 99, 235, 0.14);
+            border-color: var(--teal);
+            box-shadow: 0 0 20px rgba(88, 196, 188, 0.18);
         }
-        .syn-stage-card.complete { border-color: rgba(22, 163, 74, 0.54); }
+        .syn-stage-card.complete { border-color: rgba(88, 196, 188, 0.5); }
 
         .syn-stage-top {
             display: flex;
@@ -291,8 +296,8 @@ def inject_css() -> None:
             display: grid;
             place-items: center;
             border-radius: 10px;
-            background: #CCFBF1;
-            color: var(--white);
+            background: #E6F7F6;
+            color: var(--heading);
             font-weight: 900;
         }
 
@@ -300,17 +305,17 @@ def inject_css() -> None:
             border-radius: 999px;
             padding: 4px 8px;
             font-size: 0.68rem;
-            font-weight: 900;
-            background: #DBEAFE;
+            font-weight: 800;
+            background: #E6F7F6;
             color: var(--text2);
         }
 
-        .syn-badge.running { background: #DBEAFE; color: #2563EB; }
-        .syn-badge.complete { background: #DCFCE7; color: #16A34A; }
+        .syn-badge.running { background: #E6F7F6; color: var(--teal); }
+        .syn-badge.complete { background: #D5F2EF; color: #073F3B; }
 
         .syn-stage-title {
-            color: var(--white);
-            font-weight: 900;
+            color: var(--heading);
+            font-weight: 800;
             font-size: 0.94rem;
             margin-top: 9px;
         }
@@ -323,7 +328,7 @@ def inject_css() -> None:
         }
 
         .syn-stage-value {
-            color: var(--cyan);
+            color: var(--teal);
             font-size: 0.76rem;
             font-weight: 800;
             margin-top: 7px;
@@ -331,12 +336,38 @@ def inject_css() -> None:
         }
 
         .syn-section-label {
-            color: #0F766E;
+            color: var(--accent);
             font-size: 0.86rem;
-            font-weight: 950;
+            font-weight: 800;
             letter-spacing: 0.08em;
             text-transform: uppercase;
             margin: 16px 0 8px;
+        }
+
+        .syn-sources-list {
+            margin: 12px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+        .syn-sources-list li {
+            padding: 8px 12px;
+            margin-bottom: 6px;
+            background: #F7F2E7;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            color: var(--text2);
+        }
+        .syn-sources-list li strong { color: var(--heading); }
+
+        .syn-disclaimer {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #FFF9EC;
+            border: 1px solid #F4C542;
+            border-radius: 10px;
+            font-size: 0.78rem;
+            color: var(--muted);
         }
 
         @media (max-width: 1050px) {
@@ -735,7 +766,23 @@ def render_answer(result: dict | None) -> None:
     with st.container(border=True):
         st.markdown("### Care Navigation Answer")
         st.markdown(result.get("answer", ""))
-        st.caption("Educational healthcare navigation only. Not medical advice. Does not diagnose or prescribe.")
+        sources = result.get("sources", [])
+        if sources:
+            source_items = "".join(
+                f'<li><strong>[{s.get("source_number", i+1)}]</strong> {escape_html(_source_label(s))}'
+                + (f' <span style="color:#76908D;font-size:0.8em">· {escape_html(str(s.get("category","")))} · {escape_html(str(s.get("doc_type","")))} </span>' if s.get("category") else "")
+                + "</li>"
+                for i, s in enumerate(sources)
+            )
+            st.markdown(
+                f'<p style="font-weight:700;color:#163F3D;margin:16px 0 6px">Sources</p>'
+                f'<ul class="syn-sources-list">{source_items}</ul>',
+                unsafe_allow_html=True,
+            )
+        st.markdown(
+            '<div class="syn-disclaimer">⚠️ <strong>Illustrative data only.</strong> Educational healthcare navigation — not medical advice, diagnosis, or treatment guidance. For urgent symptoms, seek immediate care.</div>',
+            unsafe_allow_html=True,
+        )
 
 
 def render_sources(result: dict | None) -> None:
@@ -1637,28 +1684,39 @@ def render_ask_page(strategy: str, top_k: int) -> None:
     render_reranking_results(result)
 
 
+LANDING_EXAMPLE_QUESTIONS = [
+    "What does cataract surgery cost in Bangalore vs the US?",
+    "What should I ask a hospital before booking a knee replacement abroad?",
+    "What documents does my mother need for surgery in India?",
+    "How long does recovery take after hip replacement in Thailand?",
+    "Which hospitals in Bangalore are known for cardiac care?",
+    "What travel insurance do I need for medical tourism?",
+]
+
+
 def render_landing_page() -> None:
     st.markdown(
         """
         <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700;800&display=swap');
+
         [data-testid="stAppViewContainer"] {
-            background: #ffffff !important;
+            background: #F7F2E7 !important;
         }
         [data-testid="stHeader"] {
             display: none;
         }
         .main .block-container {
-            max-width: 1280px;
-            padding: 0 24px 48px;
+            max-width: 1200px;
+            padding: 0 24px 60px;
         }
         .syn-landing-nav {
             display: flex;
             align-items: center;
             gap: 14px;
-            height: 80px;
-            color: #10213d;
-            font-size: 20px;
-            font-weight: 800;
+            height: 72px;
+            color: #073F3B;
+            font: 800 20px 'Inter', sans-serif;
         }
         .syn-landing-logo {
             display: grid;
@@ -1666,54 +1724,74 @@ def render_landing_page() -> None:
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: #117ead;
+            background: #073F3B;
             color: #ffffff;
-            font-size: 23px;
+            font-size: 22px;
         }
         .syn-landing-rule {
             height: 1px;
             margin: 0 -24px;
-            background: #e7edf4;
+            background: #DDE7E2;
         }
         .syn-landing-hero {
-            max-width: 1040px;
+            max-width: 900px;
             margin: 0 auto;
-            padding: 4px 0 0;
+            padding: 52px 0 12px;
             text-align: center;
         }
         .syn-landing-badge {
             display: inline-flex;
             align-items: center;
             gap: 9px;
-            margin-top: 0;
-            padding: 8px 18px;
-            border: 1px solid #abd1ff;
+            padding: 7px 18px;
+            border: 1px solid #58C4BC;
             border-radius: 999px;
-            background: #eef6ff;
-            color: #045ca0;
-            font: 800 14px ui-monospace, SFMono-Regular, Menlo, monospace;
-            letter-spacing: .05em;
+            background: #E6F7F6;
+            color: #073F3B;
+            font: 700 13px 'Inter', ui-monospace, monospace;
+            letter-spacing: .08em;
         }
         .syn-landing-hero h1 {
-            max-width: 980px;
-            margin: 48px auto 28px;
-            color: #0d2040;
-            font-size: clamp(43px, 4.9vw, 61px);
-            line-height: 1.13;
-            letter-spacing: -.045em;
+            max-width: 860px;
+            margin: 36px auto 20px;
+            color: #163F3D;
+            font: 900 clamp(38px, 5vw, 62px)/1.1 'Playfair Display', Georgia, serif;
+            letter-spacing: -.02em;
         }
         .syn-landing-hero p {
-            max-width: 880px;
+            max-width: 680px;
             margin: 0 auto;
-            color: #4e7098;
-            font-size: 25px;
-            line-height: 1.62;
+            color: #76908D;
+            font: 400 20px/1.65 'Inter', sans-serif;
         }
+        .syn-example-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 860px;
+            margin: 36px auto 0;
+        }
+        .syn-pilot-banner {
+            margin: 48px auto 0;
+            max-width: 860px;
+            padding: 18px 24px;
+            background: #073F3B;
+            border-radius: 16px;
+            text-align: center;
+            color: #F7F2E7;
+            font: 600 15px 'Inter', sans-serif;
+            line-height: 1.5;
+        }
+        .syn-pilot-banner a {
+            color: #F4C542;
+            font-weight: 800;
+            text-decoration: none;
+        }
+        .syn-pilot-banner a:hover { text-decoration: underline; }
         .syn-landing-note {
-            margin-top: 28px;
-            margin-bottom: 48px;
-            color: #6f88aa;
-            font-size: 16px;
+            margin-top: 20px;
+            color: #76908D;
+            font: 400 13px 'Inter', sans-serif;
             text-align: center;
         }
         div[data-testid="stButton"] > button[kind="tertiary"] {
@@ -1722,42 +1800,58 @@ def render_landing_page() -> None:
             padding: 8px 0;
             border: 0 !important;
             background: transparent !important;
-            color: #6f88aa !important;
+            color: #76908D !important;
             box-shadow: none;
-            font-size: 15px;
-            font-weight: 600;
+            font: 600 15px 'Inter', sans-serif;
         }
         div[data-testid="stButton"] > button[kind="tertiary"] * {
-            color: #6f88aa !important;
+            color: #76908D !important;
         }
         div[data-testid="stButton"] > button[kind="primary"] {
-            min-height: 60px;
+            min-height: 58px;
             border: 0 !important;
-            border-radius: 18px;
-            background: #087fa8 !important;
-            color: #ffffff !important;
-            box-shadow: 0 10px 24px rgba(8, 122, 177, .24);
-            font-size: 19px;
-            font-weight: 800;
+            border-radius: 16px;
+            background: #F4C542 !important;
+            color: #073F3B !important;
+            box-shadow: 0 8px 20px rgba(244, 197, 66, .32);
+            font: 800 18px 'Inter', sans-serif;
         }
         div[data-testid="stButton"] > button[kind="primary"] * {
-            color: #ffffff !important;
+            color: #073F3B !important;
         }
         div[data-testid="stButton"] > button[kind="secondary"] {
-            min-height: 60px;
-            border: 1px solid #7ebcff !important;
-            border-radius: 18px;
+            min-height: 58px;
+            border: 1.5px solid #DDE7E2 !important;
+            border-radius: 16px;
             background: #ffffff !important;
-            color: #0565a2 !important;
-            font-size: 19px;
-            font-weight: 800;
+            color: #073F3B !important;
+            font: 700 17px 'Inter', sans-serif;
         }
         div[data-testid="stButton"] > button[kind="secondary"] * {
-            color: #0565a2 !important;
+            color: #073F3B !important;
         }
-        @media (max-width: 760px) {
-            .syn-landing-hero h1 { margin-top: 30px; font-size: 42px; }
-            .syn-landing-hero p { font-size: 20px; }
+        /* Example question chips */
+        div[data-testid="stButton"] > button[kind="secondaryFormSubmit"],
+        .syn-example-btn > div[data-testid="stButton"] > button {
+            min-height: 52px !important;
+            border: 1.5px solid #DDE7E2 !important;
+            border-radius: 14px !important;
+            background: #ffffff !important;
+            color: #163F3D !important;
+            font: 500 13px 'Inter', sans-serif !important;
+            box-shadow: 0 2px 6px rgba(7,63,59,.06) !important;
+            text-align: left !important;
+            white-space: normal !important;
+            line-height: 1.4 !important;
+        }
+        @media (max-width: 720px) {
+            .syn-landing-hero { padding: 36px 0 8px; }
+            .syn-landing-hero h1 { font-size: 36px; margin-top: 24px; }
+            .syn-landing-hero p { font-size: 17px; }
+            .syn-example-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 480px) {
+            .syn-example-grid { grid-template-columns: 1fr; }
         }
         </style>
         """,
@@ -1781,8 +1875,8 @@ def render_landing_page() -> None:
         """
         <section class="syn-landing-hero">
           <div class="syn-landing-badge">AI-POWERED CARE NAVIGATION</div>
-          <h1>Plan medical care away from home.</h1>
-          <p>Enter a procedure and destination. Synataric creates a sourced care-navigation plan covering provider options, estimated costs, travel, recovery, risks, and questions for your care team.</p>
+          <h1>Ask anything about planning medical care away from home.</h1>
+          <p>Synataric answers your questions about providers, costs, travel, recovery, and risks — sourced and cited, not guessed.</p>
         </section>
         """,
         unsafe_allow_html=True,
@@ -1794,10 +1888,20 @@ def render_landing_page() -> None:
     with example_col:
         view_example = st.button("▤  View an example plan", use_container_width=True)
 
-    if try_demo or view_example:
+    # Example questions
+    st.markdown('<div class="syn-example-grid">', unsafe_allow_html=True)
+    eq_cols = st.columns(3)
+    clicked_question = None
+    for idx, q in enumerate(LANDING_EXAMPLE_QUESTIONS):
+        with eq_cols[idx % 3]:
+            if st.button(q, key=f"landing_eq_{idx}", use_container_width=True):
+                clicked_question = q
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if try_demo or view_example or clicked_question:
         scenario_name = "Multi-step care plan"
         st.session_state.demo_mode_scenario = scenario_name
-        st.session_state.demo_mode_question = (
+        st.session_state.demo_mode_question = clicked_question if clicked_question else (
             "What are the best providers for cataract surgery in Bangalore, India? Include cost estimates in USD, "
             "recovery time, what to arrange for travel, and the most important questions to ask before booking."
         )
@@ -1806,7 +1910,15 @@ def render_landing_page() -> None:
         st.rerun()
 
     st.markdown(
-        '<div class="syn-landing-note">Working prototype using illustrative data. Educational navigation only—not medical advice, booking, or live provider availability.</div>',
+        """
+        <div style="max-width:860px;margin:0 auto;">
+          <div class="syn-pilot-banner">
+            Synataric is building a full care-coordination service —
+            <a href="https://synataric.ai" target="_blank">Join the Founding Family Pilot →</a>
+          </div>
+          <div class="syn-landing-note">Working prototype · illustrative data only · educational navigation, not medical advice or live provider availability</div>
+        </div>
+        """,
         unsafe_allow_html=True,
     )
 
@@ -1815,17 +1927,20 @@ def render_consumer_demo_page() -> None:
     st.markdown(
         """
         <style>
-        [data-testid="stAppViewContainer"] { background: #f2f7fd !important; }
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;700;800&display=swap');
+
+        [data-testid="stAppViewContainer"] { background: #F7F2E7 !important; }
         [data-testid="stHeader"] { display: none; }
-        .main .block-container { max-width: 1060px; padding: 50px 24px 60px; }
+        .main .block-container { max-width: 1060px; padding: 40px 24px 60px; }
         .syn-consumer-demo-label {
             display: flex;
             align-items: center;
             gap: 12px;
             margin: 8px 0 22px;
-            color: #0067a5;
-            font: 800 16px ui-monospace, SFMono-Regular, Menlo, monospace;
-            letter-spacing: .03em;
+            color: #073F3B;
+            font: 700 14px 'Inter', ui-monospace, monospace;
+            letter-spacing: .06em;
+            text-transform: uppercase;
         }
         .syn-consumer-demo-pin {
             display: grid;
@@ -1833,26 +1948,28 @@ def render_consumer_demo_page() -> None:
             width: 29px;
             height: 29px;
             border-radius: 8px;
-            background: #deeffb;
+            background: #E6F7F6;
+            color: #073F3B;
         }
         .syn-consumer-question {
             padding: 28px;
-            border: 1px solid #dbe3ec;
-            border-radius: 22px;
+            border: 1px solid #DDE7E2;
+            border-radius: 20px;
             background: #ffffff;
-            box-shadow: 0 3px 8px rgba(19, 48, 78, .06);
+            box-shadow: 0 3px 12px rgba(7, 63, 59, .06);
         }
         .syn-consumer-question small {
             display: block;
             margin-bottom: 15px;
-            color: #95a9c6;
-            font: 800 14px ui-monospace, SFMono-Regular, Menlo, monospace;
+            color: #76908D;
+            font: 700 13px 'Inter', ui-monospace, monospace;
+            letter-spacing: .06em;
+            text-transform: uppercase;
         }
         .syn-consumer-question p {
             margin: 0;
-            color: #071a39;
-            font-size: 20px;
-            line-height: 1.6;
+            color: #163F3D;
+            font: 400 20px/1.65 'Inter', sans-serif;
         }
         .syn-consumer-run { height: 8px; }
         div[data-testid="stButton"] > button[kind="tertiary"] {
@@ -1861,26 +1978,24 @@ def render_consumer_demo_page() -> None:
             padding: 8px 0;
             border: 0 !important;
             background: transparent !important;
-            color: #6f88aa !important;
+            color: #76908D !important;
             box-shadow: none;
-            font-size: 15px;
-            font-weight: 600;
+            font: 600 15px 'Inter', sans-serif;
         }
         div[data-testid="stButton"] > button[kind="tertiary"] * {
-            color: #6f88aa !important;
+            color: #76908D !important;
         }
         div[data-testid="stButton"] > button[kind="primary"] {
-            min-height: 66px;
+            min-height: 62px;
             border: 0 !important;
-            border-radius: 17px;
-            background: linear-gradient(100deg, #1477ac, #1599b2) !important;
-            color: #ffffff !important;
-            box-shadow: none;
-            font-size: 20px;
-            font-weight: 800;
+            border-radius: 16px;
+            background: #F4C542 !important;
+            color: #073F3B !important;
+            box-shadow: 0 8px 20px rgba(244, 197, 66, .28);
+            font: 800 19px 'Inter', sans-serif;
         }
         div[data-testid="stButton"] > button[kind="primary"] * {
-            color: #ffffff !important;
+            color: #073F3B !important;
         }
         </style>
         """,
@@ -1917,7 +2032,7 @@ def render_consumer_demo_page() -> None:
 
     if st.button("▷  Run Navigator", type="primary", use_container_width=True):
         scenario = DEMO_SCENARIOS["Multi-step care plan"]
-        with st.status("Building your sourced care plan...", expanded=False):
+        with st.status("Checking our care-planning sources…", expanded=False):
             result, latency, error = _run_live_demo(question, scenario, "semantic", 10)
         st.session_state.demo_mode_scenario = "Multi-step care plan"
         st.session_state.demo_mode_question = question
