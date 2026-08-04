@@ -58,10 +58,18 @@ def escape_html(text) -> str:
 
 
 def inject_css() -> None:
+    # Load fonts via <link> tags (non-blocking) instead of CSS @import (render-blocking)
+    st.markdown(
+        """
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+        """,
+        unsafe_allow_html=True,
+    )
     st.markdown(
         """
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600;800&display=swap');
 
         :root {
             --bg: #F7F2E7;

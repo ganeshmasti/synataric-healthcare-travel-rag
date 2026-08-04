@@ -120,6 +120,18 @@ def _rank_with_intent(question: str, scored_docs: List[tuple[Document, float]], 
     ]
 
 
+_flashrank_ranker = None
+
+
+def _get_ranker():
+    """Return a cached FlashRank Ranker, loading it once per process."""
+    global _flashrank_ranker
+    if _flashrank_ranker is None:
+        from flashrank import Ranker
+        _flashrank_ranker = Ranker(model_name="ms-marco-MiniLM-L-12-v2")
+    return _flashrank_ranker
+
+
 @traceable(name="Synataric FlashRank Reranking")
 def rerank_documents(question: str, documents: List[Document], top_n: int = 3, use_flashrank: bool = True) -> List[Document]:
     if not documents:
@@ -128,7 +140,7 @@ def rerank_documents(question: str, documents: List[Document], top_n: int = 3, u
         scored_docs = [(doc, _score_or_fallback(doc, 1.0 / i)) for i, doc in enumerate(documents, start=1)]
         return _rank_with_intent(question, scored_docs, top_n)
     try:
-        from flashrank import Ranker, RerankRequest
+        from flashrank import RerankRequest
 
         passages = [
             {
@@ -138,7 +150,7 @@ def rerank_documents(question: str, documents: List[Document], top_n: int = 3, u
             }
             for i, doc in enumerate(documents)
         ]
-        ranker = Ranker(model_name="ms-marco-MiniLM-L-12-v2")
+        ranker = _get_ranker()
         results = ranker.rerank(RerankRequest(query=question, passages=passages))
         scored_docs = []
         for final_rank, item in enumerate(results, start=1):
